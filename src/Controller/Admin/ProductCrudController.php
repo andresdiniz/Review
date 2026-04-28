@@ -4,6 +4,7 @@
 namespace App\Controller\Admin;
 
 use App\Entity\Product;
+use App\Repository\ProductRepository;
 use App\Service\ProductAIService;
 use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
@@ -31,6 +32,7 @@ class ProductCrudController extends AbstractCrudController
 {
     public function __construct(
         private ProductAIService $productAIService,
+        private ProductRepository $productRepository,
         private AdminUrlGenerator $adminUrlGenerator,
         private EntityManagerInterface $entityManager
     ) {}
@@ -56,7 +58,7 @@ class ProductCrudController extends AbstractCrudController
 
     public function configureFields(string $pageName): iterable
     {
-        // ── Somente na listagem ─────────────────────────────────────────────
+        // ── Somente na listagem ────────────────────────────────────────
         yield IdField::new('id', 'ID')
             ->onlyOnIndex();
 
@@ -73,7 +75,7 @@ class ProductCrudController extends AbstractCrudController
             })
             ->renderAsHtml();
 
-        // ── Em todas as páginas ─────────────────────────────────────────────
+        // ── Em todas as páginas ─────────────────────────────────────────
         yield TextField::new('name', 'Nome do Produto');
 
         yield TextField::new('category', 'Categoria');
@@ -90,7 +92,7 @@ class ProductCrudController extends AbstractCrudController
             ->setHelp('Nota gerada pela IA de 0.0 a 10.0')
             ->setFormTypeOption('attr', ['step' => '0.1', 'min' => '0', 'max' => '10']);
 
-        // ── Somente nos formulários (new / edit) ────────────────────────────
+        // ── Somente nos formulários ───────────────────────────────────────
         yield SlugField::new('slug', 'Slug (URL)')
             ->setTargetFieldName('name')
             ->hideOnIndex()
@@ -98,11 +100,11 @@ class ProductCrudController extends AbstractCrudController
 
         yield UrlField::new('affiliateLink', 'Link Afiliado')
             ->hideOnIndex()
-            ->setHelp('URL completa do produto no Mercado Livre (obrigatório para gerar conteúdo com IA).');
+            ->setHelp('URL completa do produto no Mercado Livre (necessário para gerar conteúdo com IA).');
 
         yield TextField::new('imageUrl', 'URL da Imagem')
             ->hideOnIndex()
-            ->setHelp('URL da imagem do produto. Preenchida automaticamente pela IA.');
+            ->setHelp('Preenchida automaticamente pela IA ao gerar conteúdo.');
 
         yield TextField::new('mercadolivreId', 'ID Mercado Livre')
             ->hideOnIndex()
@@ -112,11 +114,10 @@ class ProductCrudController extends AbstractCrudController
             ->hideOnIndex()
             ->setHelp('Apenas o ID do vídeo. Ex: dQw4w9WgXcQ');
 
-        // ── Seção IA — painel com botão (somente no edit) ───────────────────
         yield TextareaField::new('aiVerdict', 'Veredito IA')
             ->hideOnIndex()
             ->setNumOfRows(3)
-            ->setHelp('Resumo objetivo gerado pela IA. Use o botão acima para gerar.');
+            ->setHelp('Gerado automaticamente pela IA. Use o botão "Gerar com IA" na listagem.');
 
         yield CollectionField::new('pros', 'Prós')
             ->hideOnIndex()
@@ -137,9 +138,9 @@ class ProductCrudController extends AbstractCrudController
         yield TextEditorField::new('fullReviewMarkdown', 'Review Completo (Markdown)')
             ->hideOnIndex()
             ->setNumOfRows(15)
-            ->setHelp('Review completo em Markdown gerado pela IA. Mínimo recomendado: 300 palavras.');
+            ->setHelp('Review completo em Markdown. Mínimo recomendado: 300 palavras.');
 
-        // ── Somente leitura ─────────────────────────────────────────────────
+        // ── Somente leitura ──────────────────────────────────────────────
         yield DateTimeField::new('createdAt', 'Criado em')
             ->hideOnForm()
             ->setFormat('dd/MM/yyyy HH:mm');
@@ -160,28 +161,80 @@ class ProductCrudController extends AbstractCrudController
 
     public function configureActions(Actions $actions): Actions
     {
-        $generateFromUrl = Action::new('generateFromUrl', 'Gerar via URL do ML', 'fa fa-magic')
-            ->linkToCrudAction('generateFromUrl')
+        // Botão global: abre seletor de produtos para gerar IA em lote
+        $generateAi = Action::new('aiSelector', 'Gerar com IA', 'fa fa-wand-magic-sparkles')
+            ->linkToCrudAction('aiSelector')
             ->createAsGlobalAction()
             ->setCssClass('btn btn-primary');
 
+        // Botão por linha: gera IA para produto individual
+        $generateAiSingle = Action::new('aiGenerateSingle', 'IA', 'fa fa-wand-magic-sparkles')
+            ->linkToCrudAction('aiGenerateSingle')
+            ->setCssClass('btn btn-sm btn-outline-primary')
+            ->setLabel('Gerar IA');
+
         return $actions
-            ->add(Crud::PAGE_INDEX, $generateFromUrl)
-            ->add(Crud::PAGE_INDEX, Action::DETAIL);
+            ->add(Crud::PAGE_INDEX, $generateAi)
+            ->add(Crud::PAGE_INDEX, Action::DETAIL)
+            ->add(Crud::PAGE_INDEX, $generateAiSingle);
     }
 
+    /**
+     * Página: seletor de produtos para gerar IA em lote.
+     */
+    public function aiSelector(Request $request): Response
+    {
+        $filter = $request->query->get('filter', 'missing'); // 'all' | 'missing'
+
+        if ($filter === 'missing') {
+            // Só produtos sem veredito OU sem review
+            $products = $this->productRepository->findWithoutAiContent();
+        } else {
+            $products = $this->productRepository->findBy([], ['createdAt' => 'DESC']);
+        }
+
+        return $this->render('admin/ai_selector.html.twig', [
+            'products'   => $products,
+            'filter'     => $filter,
+            'csrf_token' => $this->generateCsrfToken('admin_ai_generate'),
+            'batch_url'  => '/admin/ai/generate-batch',
+            'single_url' => '/admin/ai/generate',
+            'list_url'   => $this->adminUrlGenerator
+                ->setController(self::class)
+                ->setAction('index')
+                ->generateUrl(),
+        ]);
+    }
+
+    /**
+     * Ação por linha: redireciona para o seletor com produto pré-selecionado.
+     */
+    public function aiGenerateSingle(Request $request): Response
+    {
+        $entityId = $request->query->get('entityId');
+
+        return $this->redirect(
+            $this->adminUrlGenerator
+                ->setController(self::class)
+                ->setAction('aiSelector')
+                ->set('preselect', $entityId)
+                ->generateUrl()
+        );
+    }
+
+    // ── Fluxo antigo: gerar produto novo a partir de URL ────────────────────
     public function generateFromUrl(Request $request): Response
     {
         if ($request->isMethod('POST')) {
             if (!$this->isCsrfTokenValid('ea-generate-from-url', $request->request->get('_token'))) {
                 $this->addFlash('danger', 'Token de segurança inválido. Tente novamente.');
 
-                return $this->render('admin/generate_from_url.html.twig', [
-                    'action' => $this->adminUrlGenerator
+                return $this->redirect(
+                    $this->adminUrlGenerator
                         ->setController(self::class)
-                        ->setAction('generateFromUrl')
-                        ->generateUrl(),
-                ]);
+                        ->setAction('aiSelector')
+                        ->generateUrl()
+                );
             }
 
             $url = trim((string) $request->request->get('affiliate_url', ''));
@@ -190,8 +243,7 @@ class ProductCrudController extends AbstractCrudController
                 $this->addFlash('danger', 'Informe uma URL válida do Mercado Livre.');
             } else {
                 try {
-                    $data = $this->productAIService->generateFromAffiliateLink($url);
-
+                    $data    = $this->productAIService->generateFromAffiliateLink($url);
                     $product = new Product();
                     $product->setName($data['name']);
                     $product->setSlug($data['slug']);
@@ -225,11 +277,11 @@ class ProductCrudController extends AbstractCrudController
             }
         }
 
-        return $this->render('admin/generate_from_url.html.twig', [
-            'action' => $this->adminUrlGenerator
+        return $this->redirect(
+            $this->adminUrlGenerator
                 ->setController(self::class)
-                ->setAction('generateFromUrl')
-                ->generateUrl(),
-        ]);
+                ->setAction('aiSelector')
+                ->generateUrl()
+        );
     }
 }

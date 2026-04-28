@@ -1,0 +1,460 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block page_title %}Gerar Conteúdo com IA{% endblock %}
+
+{% block main %}
+<style>
+.ai-sel-wrap { max-width: 960px; margin: 0 auto; }
+.ai-toolbar {
+    display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;
+    background: #fff; border-radius: 12px;
+    padding: 1rem 1.25rem; margin-bottom: 1.25rem;
+    box-shadow: 0 1px 8px rgba(0,0,0,.07);
+}
+.ai-toolbar .tab-btn {
+    border: 1.5px solid #e5e7eb; background: #fff; border-radius: 8px;
+    padding: .4rem 1rem; font-size: .85rem; font-weight: 600; color: #6b7280;
+    cursor: pointer; transition: all .15s;
+}
+.ai-toolbar .tab-btn.active {
+    border-color: #4f46e5; background: #eef2ff; color: #4f46e5;
+}
+.ai-toolbar .spacer { flex: 1; }
+
+.sel-table-wrap {
+    background: #fff; border-radius: 12px;
+    box-shadow: 0 1px 8px rgba(0,0,0,.07);
+    overflow: hidden;
+}
+.sel-table {
+    width: 100%; border-collapse: collapse; font-size: .875rem;
+}
+.sel-table thead th {
+    padding: .65rem 1rem; font-size: .72rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .05em;
+    color: #9ca3af; background: #fafafa;
+    border-bottom: 1px solid #f3f4f6;
+}
+.sel-table tbody tr { transition: background .12s; }
+.sel-table tbody tr:hover { background: #f9fafb; }
+.sel-table tbody td {
+    padding: .75rem 1rem; border-bottom: 1px solid #f3f4f6;
+    vertical-align: middle; color: #374151;
+}
+.sel-table tbody tr:last-child td { border-bottom: none; }
+.sel-table tbody tr.is-selected { background: #eef2ff; }
+
+.prod-thumb {
+    width: 40px; height: 40px; object-fit: cover;
+    border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,.1);
+}
+.prod-thumb-ph {
+    width: 40px; height: 40px; border-radius: 8px;
+    background: #f3f4f6; display: flex; align-items: center;
+    justify-content: center; color: #d1d5db;
+}
+
+.badge-missing { display:inline-flex; align-items:center; gap:.3rem;
+    padding:.22em .65em; border-radius:999px; font-size:.72rem; font-weight:600;
+    background:#fee2e2; color:#991b1b; }
+.badge-ok { background:#d1fae5; color:#065f46; }
+.badge-partial { background:#fef3c7; color:#92400e; }
+
+.row-status { font-size: .75rem; }
+
+/* Bottom bar */
+.ai-bottom {
+    position: sticky; bottom: 0; left: 0; right: 0;
+    background: #fff; border-top: 1.5px solid #e5e7eb;
+    padding: 1rem 1.25rem;
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+    box-shadow: 0 -2px 12px rgba(0,0,0,.06);
+    border-radius: 0 0 12px 12px;
+    margin-top: 0;
+}
+.ai-bottom .count-label { font-size: .875rem; color: #6b7280; }
+.ai-bottom .count-label strong { color: #111827; }
+
+/* Progresso */
+#ai-progress-wrap {
+    background: #fff; border-radius: 12px;
+    box-shadow: 0 1px 8px rgba(0,0,0,.07);
+    padding: 1.25rem 1.5rem; margin-bottom: 1.25rem;
+    display: none;
+}
+.progress-bar-outer {
+    height: 8px; border-radius: 999px; background: #e5e7eb; overflow: hidden;
+    margin-bottom: .75rem;
+}
+.progress-bar-inner {
+    height: 100%; border-radius: 999px;
+    background: linear-gradient(90deg, #4f46e5, #7c3aed);
+    transition: width .4s ease;
+    width: 0%;
+}
+#ai-results-list { list-style: none; padding: 0; margin: 0; }
+#ai-results-list li {
+    display: flex; align-items: center; gap: .5rem;
+    padding: .35rem 0; font-size: .85rem;
+    border-bottom: 1px solid #f3f4f6;
+}
+#ai-results-list li:last-child { border-bottom: none; }
+.result-icon-ok { color: #10b981; }
+.result-icon-err { color: #ef4444; }
+.result-icon-skip { color: #f59e0b; }
+.result-icon-loading { color: #6b7280; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Modal confirmação */
+#confirm-modal-backdrop {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.45); z-index: 9999;
+    align-items: center; justify-content: center;
+}
+#confirm-modal-backdrop.show { display: flex; }
+#confirm-modal {
+    background: #fff; border-radius: 16px; padding: 2rem;
+    max-width: 460px; width: 90%; box-shadow: 0 8px 40px rgba(0,0,0,.18);
+    animation: modalIn .2s ease;
+}
+@keyframes modalIn { from { transform: scale(.94); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+</style>
+
+<div class="ai-sel-wrap">
+
+    {# Toolbar de filtros #}
+    <div class="ai-toolbar">
+        <span style="font-weight:700;color:#111827;font-size:.95rem;">
+            <i class="fa fa-wand-magic-sparkles me-2 text-primary"></i>Gerar Conteúdo com IA
+        </span>
+        <a href="?filter=missing" class="tab-btn {{ filter == 'missing' ? 'active' : '' }}">
+            <i class="fa fa-circle-exclamation me-1"></i>Sem conteúdo
+        </a>
+        <a href="?filter=all" class="tab-btn {{ filter == 'all' ? 'active' : '' }}">
+            <i class="fa fa-list me-1"></i>Todos
+        </a>
+        <div class="spacer"></div>
+        <a href="{{ list_url }}" class="btn btn-sm btn-outline-secondary">
+            <i class="fa fa-arrow-left me-1"></i>Voltar
+        </a>
+    </div>
+
+    {# Barra de progresso (oculta até começar) #}
+    <div id="ai-progress-wrap">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+            <span style="font-weight:700;font-size:.9rem;color:#111827">
+                <i class="fa fa-spinner fa-spin me-2 text-primary"></i>
+                Gerando conteúdo...
+            </span>
+            <span id="progress-text" style="font-size:.8rem;color:#6b7280">0 / 0</span>
+        </div>
+        <div class="progress-bar-outer">
+            <div class="progress-bar-inner" id="progress-bar"></div>
+        </div>
+        <ul id="ai-results-list"></ul>
+    </div>
+
+    {# Tabela de produtos #}
+    <div class="sel-table-wrap">
+        {% if products|length == 0 %}
+            <div style="text-align:center;padding:3rem 1rem;color:#9ca3af;">
+                <i class="fa fa-check-circle" style="font-size:2.5rem;margin-bottom:.75rem;display:block;color:#10b981"></i>
+                {% if filter == 'missing' %}
+                    Todos os produtos já possuem conteúdo gerado pela IA.
+                {% else %}
+                    Nenhum produto cadastrado.
+                {% endif %}
+            </div>
+        {% else %}
+        <table class="sel-table">
+            <thead>
+                <tr>
+                    <th style="width:40px">
+                        <input type="checkbox" id="check-all" title="Selecionar todos">
+                    </th>
+                    <th style="width:50px">Img</th>
+                    <th>Nome</th>
+                    <th>Categoria</th>
+                    <th>Conteúdo IA</th>
+                    <th>Nota</th>
+                    <th style="width:90px"></th>
+                </tr>
+            </thead>
+            <tbody id="products-tbody">
+                {% for product in products %}
+                {% set hasVerdict = product.aiVerdict is not empty %}
+                {% set hasReview  = product.fullReviewMarkdown is not empty %}
+                {% set hasPros    = product.pros is not empty %}
+                {% set hasLink    = product.affiliateLink is not empty %}
+                {% set hasAll     = hasVerdict and hasReview and hasPros %}
+                <tr id="row-{{ product.id }}" data-id="{{ product.id }}" data-name="{{ product.name|e('html_attr') }}" data-has-content="{{ hasAll ? '1' : '0' }}" data-has-link="{{ hasLink ? '1' : '0' }}">
+                    <td>
+                        <input type="checkbox" class="row-check" value="{{ product.id }}"
+                            {% if not hasLink %}disabled title="Sem link afiliado"{% endif %}>
+                    </td>
+                    <td>
+                        {% if product.imageUrl %}
+                            <img src="{{ product.imageUrl }}" alt="" class="prod-thumb">
+                        {% else %}
+                            <div class="prod-thumb-ph"><i class="fa fa-image"></i></div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="font-weight:600;color:#111827;line-height:1.3">{{ product.name }}</div>
+                        {% if not hasLink %}
+                            <div style="font-size:.72rem;color:#ef4444;margin-top:.2rem">
+                                <i class="fa fa-warning me-1"></i>Sem link afiliado
+                            </div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if product.category %}
+                            <span style="background:#ede9fe;color:#6d28d9;padding:.2em .65em;border-radius:999px;font-size:.72rem;font-weight:600">
+                                {{ product.category }}
+                            </span>
+                        {% else %}
+                            <span style="color:#d1d5db">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="row-status">
+                        {% if hasAll %}
+                            <span class="badge-missing badge-ok"><i class="fa fa-check"></i> Completo</span>
+                        {% elseif hasVerdict or hasReview %}
+                            <span class="badge-missing badge-partial"><i class="fa fa-circle-half-stroke"></i> Parcial</span>
+                        {% else %}
+                            <span class="badge-missing"><i class="fa fa-xmark"></i> Sem conteúdo</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if product.score %}
+                            <span style="font-weight:700;color:#065f46">{{ product.score|number_format(1,',','.') }}</span>
+                        {% else %}
+                            <span style="color:#d1d5db">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-outline-primary btn-generate-one"
+                            data-id="{{ product.id }}" data-name="{{ product.name|e('html_attr') }}"
+                            data-has-content="{{ hasAll ? '1' : '0' }}"
+                            {% if not hasLink %}disabled{% endif %}>
+                            <i class="fa fa-wand-magic-sparkles"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+
+    {# Barra inferior sticky #}
+    {% if products|length > 0 %}
+    <div class="ai-bottom sel-table-wrap" style="margin-top:0;border-top:1.5px solid #e5e7eb">
+        <span class="count-label"><strong id="selected-count">0</strong> selecionado(s)</span>
+        <label style="font-size:.85rem;display:flex;align-items:center;gap:.4rem;cursor:pointer;">
+            <input type="checkbox" id="chk-force"> Sobrescrever conteúdo existente
+        </label>
+        <div class="spacer"></div>
+        <button type="button" id="btn-generate-batch" class="btn btn-primary" disabled>
+            <i class="fa fa-wand-magic-sparkles me-1"></i>
+            Gerar com IA
+        </button>
+    </div>
+    {% endif %}
+
+</div>
+
+{# Modal de confirmação (sobrescrever) #}
+<div id="confirm-modal-backdrop">
+    <div id="confirm-modal">
+        <h5 style="margin-bottom:.75rem;font-weight:700">
+            <i class="fa fa-triangle-exclamation me-2 text-warning"></i>Confirmar sobrescrita
+        </h5>
+        <p id="confirm-modal-text" style="color:#4b5563;margin-bottom:1.25rem;font-size:.9rem"></p>
+        <div class="d-flex gap-2 justify-content-end">
+            <button type="button" id="confirm-cancel" class="btn btn-outline-secondary">Cancelar</button>
+            <button type="button" id="confirm-ok" class="btn btn-danger">Sobrescrever e gerar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const CSRF    = {{ csrf_token|json_encode|raw }};
+    const BATCH   = {{ batch_url|json_encode|raw }};
+    const SINGLE  = {{ single_url|json_encode|raw }};
+    const PRESELECT = {{ app.request.query.get('preselect')|default(null)|json_encode|raw }};
+
+    // Pré-seleciona produto se veio por botão individual
+    if (PRESELECT) {
+        const cb = document.querySelector('.row-check[value="' + PRESELECT + '"]');
+        if (cb && !cb.disabled) cb.checked = true;
+        updateCount();
+    }
+
+    // Selecionar todos
+    document.getElementById('check-all')?.addEventListener('change', function () {
+        document.querySelectorAll('.row-check:not([disabled])').forEach(cb => cb.checked = this.checked);
+        updateCount();
+    });
+    document.querySelectorAll('.row-check').forEach(cb => cb.addEventListener('change', updateCount));
+
+    function updateCount() {
+        const n = document.querySelectorAll('.row-check:checked').length;
+        document.getElementById('selected-count').textContent = n;
+        const btn = document.getElementById('btn-generate-batch');
+        if (btn) btn.disabled = n === 0;
+    }
+
+    // Botão gerar lote
+    document.getElementById('btn-generate-batch')?.addEventListener('click', function () {
+        const ids     = Array.from(document.querySelectorAll('.row-check:checked')).map(cb => parseInt(cb.value));
+        const force   = document.getElementById('chk-force').checked;
+
+        if (!ids.length) return;
+
+        // Verifica se algum já tem conteúdo e não está no modo force
+        const withContent = ids.filter(id => {
+            const row = document.querySelector('tr[data-id="' + id + '"]');
+            return row && row.dataset.hasContent === '1';
+        });
+
+        if (withContent.length > 0 && !force) {
+            showConfirmModal(
+                withContent.length + ' produto(s) selecionado(s) já possuem conteúdo. Deseja sobrescrever?',
+                () => runBatch(ids, true)
+            );
+            return;
+        }
+
+        runBatch(ids, force);
+    });
+
+    // Botão gerar individual por linha
+    document.querySelectorAll('.btn-generate-one').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const id   = parseInt(this.dataset.id);
+            const name = this.dataset.name;
+            const has  = this.dataset.hasContent === '1';
+            const force = document.getElementById('chk-force')?.checked || false;
+
+            if (has && !force) {
+                showConfirmModal(
+                    '"' + name + '" já possui conteúdo gerado. Deseja sobrescrever?',
+                    () => runBatch([id], true)
+                );
+                return;
+            }
+            runBatch([id], force);
+        });
+    });
+
+    // ── Engine de execução ───────────────────────────────────
+    async function runBatch(ids, force) {
+        const wrap = document.getElementById('ai-progress-wrap');
+        const bar  = document.getElementById('progress-bar');
+        const txt  = document.getElementById('progress-text');
+        const list = document.getElementById('ai-results-list');
+
+        wrap.style.display = 'block';
+        list.innerHTML = '';
+        bar.style.width = '0%';
+
+        // Desabilita botões durante processo
+        document.getElementById('btn-generate-batch').disabled = true;
+        document.querySelectorAll('.btn-generate-one').forEach(b => b.disabled = true);
+
+        // Adiciona itens de loading na lista
+        ids.forEach(id => {
+            const row = document.querySelector('tr[data-id="' + id + '"]');
+            const name = row ? row.dataset.name : '#' + id;
+            list.insertAdjacentHTML('beforeend',
+                '<li id="result-' + id + '">' +
+                '<i class="fa fa-spinner result-icon-loading"></i>' +
+                '<span class="text-muted">' + escHtml(name) + '</span> — <em>aguardando...</em>' +
+                '</li>'
+            );
+        });
+
+        let done = 0;
+
+        // Processa um por um para atualizar progresso em tempo real
+        for (const id of ids) {
+            const liEl = document.getElementById('result-' + id);
+            const row  = document.querySelector('tr[data-id="' + id + '"]');
+            const name = row ? row.dataset.name : '#' + id;
+
+            if (liEl) liEl.innerHTML =
+                '<i class="fa fa-spinner result-icon-loading"></i>' +
+                '<span>' + escHtml(name) + '</span> — <em>gerando...</em>';
+
+            try {
+                const res  = await fetch(SINGLE, {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
+                    body:    JSON.stringify({ productId: id, force: force }),
+                });
+                const data = await res.json();
+
+                done++;
+                const pct = Math.round((done / ids.length) * 100);
+                bar.style.width = pct + '%';
+                txt.textContent = done + ' / ' + ids.length;
+
+                if (data.success) {
+                    const scoreTag = data.score ? ' <strong>(' + data.score + '/10)</strong>' : '';
+                    if (liEl) liEl.innerHTML =
+                        '<i class="fa fa-check-circle result-icon-ok"></i>' +
+                        '<span>' + escHtml(name) + '</span>' + scoreTag;
+                    // Atualiza status na linha
+                    if (row) {
+                        row.dataset.hasContent = '1';
+                        const statusCell = row.querySelector('.row-status');
+                        if (statusCell) statusCell.innerHTML = '<span class="badge-missing badge-ok"><i class="fa fa-check"></i> Completo</span>';
+                    }
+                } else if (data.needs_confirmation) {
+                    if (liEl) liEl.innerHTML =
+                        '<i class="fa fa-circle-minus result-icon-skip"></i>' +
+                        '<span>' + escHtml(name) + '</span> — já possui conteúdo (marque "Sobrescrever" para atualizar)';
+                } else {
+                    if (liEl) liEl.innerHTML =
+                        '<i class="fa fa-circle-xmark result-icon-err"></i>' +
+                        '<span>' + escHtml(name) + '</span> — ' + escHtml(data.error || 'erro');
+                }
+            } catch (err) {
+                done++;
+                if (liEl) liEl.innerHTML =
+                    '<i class="fa fa-circle-xmark result-icon-err"></i>' +
+                    '<span>' + escHtml(name) + '</span> — falha na conexão';
+            }
+        }
+
+        // Reabilita botões
+        const batchBtn = document.getElementById('btn-generate-batch');
+        if (batchBtn) batchBtn.disabled = false;
+        document.querySelectorAll('.btn-generate-one').forEach(b => b.disabled = false);
+    }
+
+    // ── Modal ──────────────────────────────────────────────
+    let confirmCallback = null;
+    function showConfirmModal(msg, cb) {
+        document.getElementById('confirm-modal-text').textContent = msg;
+        document.getElementById('confirm-modal-backdrop').classList.add('show');
+        confirmCallback = cb;
+    }
+    document.getElementById('confirm-cancel')?.addEventListener('click', () => {
+        document.getElementById('confirm-modal-backdrop').classList.remove('show');
+        confirmCallback = null;
+    });
+    document.getElementById('confirm-ok')?.addEventListener('click', () => {
+        document.getElementById('confirm-modal-backdrop').classList.remove('show');
+        if (confirmCallback) confirmCallback();
+        confirmCallback = null;
+    });
+
+    function escHtml(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+}());
+</script>
+{% endblock %}

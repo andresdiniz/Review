@@ -36,8 +36,17 @@ class DashboardController extends AbstractDashboardController
 
     public function configureDashboard(): Dashboard
     {
+        // SVG inline — elimina o 404 de /img/logo.png
+        $logo = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+            xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-right:6px">
+            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02
+                     L7 14.14L2 9.27L8.91 8.26L12 2Z"
+                  fill="#f59e0b" stroke="#f59e0b" stroke-width="1.5"
+                  stroke-linejoin="round"/>
+        </svg>';
+
         return Dashboard::new()
-            ->setTitle('<img src="/img/logo.png" alt="Logo" style="height:30px"> Reviews')
+            ->setTitle($logo . 'Reviews')
             ->setFaviconPath('favicon.ico')
             ->setLocales(['pt_BR']);
     }
@@ -45,7 +54,7 @@ class DashboardController extends AbstractDashboardController
     public function configureMenuItems(): iterable
     {
         yield MenuItem::linkToDashboard('Dashboard', 'fa fa-home');
-        yield MenuItem::linkTo(ProductCrudController::class, 'Produtos', 'fa fa-tag');
-        yield MenuItem::linkTo(UserCrudController::class, 'Usuários', 'fa fa-user');
+        yield MenuItem::linkToCrud('Produtos', 'fa fa-tag', Product::class);
+        yield MenuItem::linkToCrud('Usuários', 'fa fa-user', User::class);
     }
 }

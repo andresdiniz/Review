@@ -82,6 +82,21 @@ class ProductRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /**
+     * Produtos sem conteúdo de IA (veredito e/ou review vazios).
+     * Usado pelo seletor de lote de IA.
+     */
+    public function findWithoutAiContent(): array
+    {
+        return $this->createQueryBuilder('p')
+            ->where('p.aiVerdict IS NULL OR p.aiVerdict = :empty')
+            ->orWhere('p.fullReviewMarkdown IS NULL OR p.fullReviewMarkdown = :empty')
+            ->setParameter('empty', '')
+            ->orderBy('p.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
     public function findRelated(Product $product, int $limit = 4): array
     {
         return $this->createQueryBuilder('p')
@@ -124,17 +139,16 @@ class ProductRepository extends ServiceEntityRepository
         return [
             'total'           => $total,
             'avgPrice'        => $avgPrice,
-            'avgScore'        => $avgScore,     // ← novo
+            'avgScore'        => $avgScore,
             'updatedToday'    => $updatedToday,
             'categoriesCount' => $categoriesCount,
         ];
     }
 
-    // ── Helpers privados ──────────────────────────────────────────────────────
+    // ── Helpers privados ───────────────────────────────────────────────
 
     private function buildFilteredQuery(array $filters, string $orderBy, string $order): \Doctrine\ORM\QueryBuilder
     {
-        // ── bug #4 corrigido: 'score' adicionado ao whitelist ─────────────
         $allowedOrderBy = ['createdAt', 'currentPrice', 'name', 'lastUpdateAt', 'score'];
         $allowedOrder   = ['ASC', 'DESC'];
 
