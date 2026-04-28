@@ -1,0 +1,25 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block page_title %}
+    Gerar produto a partir de URL de afiliado
+{% endblock %}
+
+{% block main %}
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <form method="post" action="{{ action }}">
+                        <div class="mb-3">
+                            <label for="affiliate_url" class="form-label">URL do produto (Amazon, Shopee, etc.)</label>
+                            <input type="url" class="form-control" id="affiliate_url" name="affiliate_url" required>
+                            <div class="form-text">A IA vai extrair dados e gerar o review automaticamente.</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Gerar Produto</button>
+                        <a href="{{ path('admin') }}" class="btn btn-secondary">Cancelar</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

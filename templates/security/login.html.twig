@@ -1,0 +1,42 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'login.subtitle'|trans }} — ReviewIA{% endblock %}
+{% block meta_robots %}noindex, nofollow{% endblock %}
+
+{% block body %}
+<div class="login-page">
+    <div class="container">
+        <div class="login-card">
+            <div class="login-logo">Review<span>IA</span></div>
+            <p class="login-sub">{{ 'login.subtitle'|trans }}</p>
+
+            {% if error %}
+                <div class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3"
+                     role="alert" style="font-family:var(--ff-ui);font-size:.875rem;border-radius:8px;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    {{ error.messageKey|trans(error.messageData, 'security') }}
+                </div>
+            {% endif %}
+
+            <form method="post" novalidate>
+                <div class="mb-3">
+                    <label class="login-label" for="inputEmail">{{ 'login.email'|trans }}</label>
+                    <input type="email" value="{{ last_username }}" name="email" id="inputEmail"
+                           class="login-input" autocomplete="email" required autofocus
+                           placeholder="{{ 'login.placeholder_email'|trans }}">
+                </div>
+                <div class="mb-4">
+                    <label class="login-label" for="inputPassword">{{ 'login.password'|trans }}</label>
+                    <input type="password" name="password" id="inputPassword"
+                           class="login-input" autocomplete="current-password" required
+                           placeholder="••••••••">
+                </div>
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+                <button class="login-btn" type="submit">
+                    <i class="fas fa-sign-in-alt me-2"></i>{{ 'login.submit'|trans }}
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,247 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'site.title'|trans }}{% endblock %}
+{% block meta_description %}{{ 'site.description'|trans }}{% endblock %}
+{% block og_title %}ReviewIA — Reviews com Inteligência Artificial{% endblock %}
+{% block og_description %}{{ 'site.description'|trans }}{% endblock %}
+
+{% block structured_data %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "name": "Reviews de Produtos — ReviewIA",
+  "url": "{{ app.request.uri }}",
+  "inLanguage": "{{ app.request.locale|replace({'_': '-'}) }}",
+  "mainEntity": {
+    "@type": "ItemList",
+    "numberOfItems": {{ products|length }},
+    "itemListElement": [
+      {% for product in products %}
+      {
+        "@type": "ListItem",
+        "position": {{ loop.index }},
+        "url": "{{ url('product_show', {slug: product.slug}) }}",
+        "name": "{{ product.name|e('js') }}"
+      }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ]
+  }
+}
+</script>
+{% endblock %}
+
+{% block body %}
+
+{# ── Hero ── #}
+<section class="hero" aria-label="Cabeçalho do site">
+    <div class="hero-grid"></div>
+    <div class="hero-glow"></div>
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-7 hero-content">
+                <div class="hero-eyebrow"><i class="fas fa-robot"></i> {{ 'hero.eyebrow'|trans }}</div>
+                <h1 class="hero-title">{{ 'hero.title'|trans|raw }}</h1>
+                <p class="hero-sub">{{ 'hero.subtitle'|trans }}</p>
+                <form class="hero-search" role="search" method="get" action="{{ path('product_index') }}">
+                    <input type="search" name="search" value="{{ app.request.query.get('search') }}"
+                           placeholder="{{ 'hero.search'|trans }}" aria-label="{{ 'hero.search'|trans }}">
+                    <button type="submit"><i class="fas fa-search me-1"></i>{{ 'hero.search_btn'|trans }}</button>
+                </form>
+                <div class="trust-pills">
+                    <div class="trust-pill"><i class="fas fa-check-circle"></i> {{ 'hero.trust_1'|trans }}</div>
+                    <div class="trust-pill"><i class="fas fa-bolt"></i> {{ 'hero.trust_2'|trans }}</div>
+                    <div class="trust-pill"><i class="fas fa-shield-alt"></i> {{ 'hero.trust_3'|trans }}</div>
+                    {% if products is not empty %}
+                    <div class="trust-pill">
+                        <i class="fas fa-star"></i>
+                        <strong style="color:var(--accent)">{{ products|length }}</strong>&nbsp;{{ 'hero.trust_count'|trans({'%count%': products|length}) }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-lg-5 d-none d-lg-block hero-visual">
+                <div class="hero-float-card">
+                    <div style="font-family:var(--ff-ui);font-size:.7rem;color:#6b7280;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;">{{ 'hero.card_label'|trans }}</div>
+                    <div class="hfc-score">9.2</div>
+                    <div class="hfc-label" style="margin-bottom:.75rem;">{{ 'hero.card_verdict'|trans }}</div>
+                    <div class="hfc-bar-wrap">
+                        <div class="hfc-row"><span>Qualidade</span><span style="color:#fff">9.4</span></div>
+                        <div class="hfc-bar"><div class="hfc-fill" style="width:94%"></div></div>
+                        <div class="hfc-row" style="margin-top:.3rem"><span>Custo-benefício</span><span style="color:#fff">9.0</span></div>
+                        <div class="hfc-bar"><div class="hfc-fill" style="width:90%"></div></div>
+                        <div class="hfc-row" style="margin-top:.3rem"><span>Durabilidade</span><span style="color:#fff">8.8</span></div>
+                        <div class="hfc-bar"><div class="hfc-fill" style="width:88%"></div></div>
+                    </div>
+                    <div style="margin-top:1rem;padding-top:.75rem;border-top:1px solid rgba(255,255,255,.07);display:flex;justify-content:space-between;font-family:var(--ff-ui);font-size:.75rem;color:#555;">
+                        <span>✅ Recomendado pela IA</span>
+                        <span style="color:var(--green)">R$ 299,90</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{# ── Categorias ──
+   CORRIGIDO: chips agora usam as categorias reais do banco de dados
+   passadas pelo controller (variável `categories`), com link funcional
+   para a rota product_category. O "Todas" sempre aparece primeiro.
+#}
+<section class="cats-section" aria-label="{{ 'categories.label'|trans }}">
+    <div class="container">
+        <div class="d-flex gap-2 flex-wrap align-items-center">
+            <span style="font-family:var(--ff-ui);font-size:.8rem;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin-right:.25rem;">
+                {{ 'categories.label'|trans }}
+            </span>
+
+            {# "Todas" sempre presente e sempre linkado ao index sem filtro #}
+            <a class="cat-chip {{ app.request.attributes.get('_route') == 'product_index' and not app.request.query.get('category') ? 'active' : '' }}"
+               href="{{ path('product_index') }}">
+                <i class="fas fa-th"></i> {{ 'categories.all'|trans }}
+            </a>
+
+            {# CORRIGIDO: categorias dinâmicas vindas do banco, não hardcoded #}
+            {% for cat in categories %}
+            <a class="cat-chip {{ app.request.query.get('category') == cat ? 'active' : '' }}"
+               href="{{ path('product_category', {category: cat}) }}">
+                <i class="fas fa-tag"></i> {{ cat }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<div class="container">
+    {% if products is empty %}
+    <div class="empty-state reveal">
+        <div class="empty-state-icon"><i class="fas fa-box-open"></i></div>
+        <h2>{{ 'empty.title'|trans }}</h2>
+        <p>{{ 'empty.desc'|trans }}</p>
+    </div>
+    {% else %}
+
+    {# ── Destaque (primeiro produto) ── #}
+    {% set featured = products|first %}
+    <section class="featured-section reveal" aria-labelledby="featured-title">
+        <div class="section-eyebrow"><i class="fas fa-star"></i> {{ 'featured.eyebrow'|trans }}</div>
+        <h2 id="featured-title" class="section-title">{{ 'featured.title'|trans }}</h2>
+        <a href="{{ path('product_show', {slug: featured.slug}) }}" class="featured-card">
+            <div class="featured-img">
+                {% if featured.imageUrl %}
+                    {# CORRIGIDO: destaque usa loading="eager" para não prejudicar o LCP #}
+                    <img src="{{ featured.imageUrl }}" alt="Review de {{ featured.name }}" loading="eager">
+                {% else %}
+                    <div class="featured-img-placeholder"><i class="fas fa-box"></i></div>
+                {% endif %}
+                <span class="feat-badge"><i class="fas fa-fire me-1"></i>{{ 'featured.badge'|trans }}</span>
+            </div>
+            <div class="featured-body">
+                {% if featured.category %}<div class="feat-cat"><i class="fas fa-tag me-1"></i>{{ featured.category }}</div>{% endif %}
+                <h3 class="feat-title">{{ featured.name }}</h3>
+                <p class="feat-verdict">{{ featured.aiVerdict|striptags }}</p>
+                {% if featured.pros|length %}
+                <div class="feat-pros">
+                    {% for pro in featured.pros|slice(0, 3) %}
+                    <div class="feat-pro-item">{{ pro }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <div class="feat-footer">
+                    <div class="feat-price"><small>{{ 'featured.from'|trans }}</small> R$ {{ featured.currentPrice|number_format(2, ',', '.') }}</div>
+                    <span class="feat-cta"><i class="fas fa-book-open"></i>{{ 'featured.read'|trans }}</span>
+                </div>
+            </div>
+        </a>
+    </section>
+
+    {# ── Grid de produtos ── #}
+    <section class="grid-section" aria-labelledby="grid-title">
+        <div class="grid-header">
+            <div>
+                <div class="section-eyebrow" style="margin-bottom:.25rem;"><i class="fas fa-th-large"></i> {{ 'grid.eyebrow'|trans }}</div>
+                <h2 id="grid-title" style="font-family:var(--ff-h);font-size:1.4rem;font-weight:900;color:#111827;margin:0;">
+                    {{ products|length == 1
+                        ? 'grid.count_one'|trans({'%count%': products|length})
+                        : 'grid.count_many'|trans({'%count%': products|length}) }}
+                </h2>
+            </div>
+
+            {# CORRIGIDO: botões de ordenação agora são links reais que passam
+               o parâmetro order_by para o controller via GET.
+               O nome do campo segue o padrão do Symfony Form (product_filter_type[order_by]).
+            #}
+            <div class="filter-row" role="toolbar" aria-label="{{ 'grid.eyebrow'|trans }}">
+                {% set currentOrder = app.request.query.all('product_filter_type')['order_by'] ?? '' %}
+                <a href="{{ path('product_index', {'product_filter_type[order_by]': 'createdAt'}) }}"
+                   class="f-btn {{ currentOrder == 'createdAt' or currentOrder == '' ? 'active' : '' }}">
+                    {{ 'grid.sort_new'|trans }}
+                </a>
+                <a href="{{ path('product_index', {'product_filter_type[order_by]': 'score_desc'}) }}"
+                   class="f-btn {{ currentOrder == 'score_desc' ? 'active' : '' }}">
+                    {{ 'grid.sort_score'|trans }}
+                </a>
+                <a href="{{ path('product_index', {'product_filter_type[order_by]': 'currentPrice_asc'}) }}"
+                   class="f-btn {{ currentOrder == 'currentPrice_asc' ? 'active' : '' }}">
+                    {{ 'grid.sort_price'|trans }}
+                </a>
+            </div>
+        </div>
+
+        <div class="row g-4" role="list" aria-label="{{ 'grid.eyebrow'|trans }}">
+            {% for product in products %}
+            <div class="col-xl-3 col-lg-4 col-md-6 reveal" role="listitem">
+                <a href="{{ url('product_show', {slug: product.slug}) }}" class="pcard" aria-label="{{ product.name }}">
+                    <div class="pcard-img">
+                        {% if product.imageUrl %}
+                            {# CORRIGIDO: loading="lazy" em todos exceto o destaque (já tratado acima) #}
+                            <img src="{{ product.imageUrl }}" alt="Review de {{ product.name }}" loading="lazy">
+                        {% else %}
+                            <div class="pcard-img-ph"><i class="fas fa-box"></i></div>
+                        {% endif %}
+                        <div class="pcard-overlay">
+                            <span class="pcard-overlay-cta"><i class="fas fa-book-open"></i> {{ 'featured.read'|trans }}</span>
+                        </div>
+                        {% if loop.index <= 3 %}<span class="pcard-new">Novo</span>{% endif %}
+                    </div>
+                    <div class="pcard-body">
+                        {% if product.category %}<span class="pcard-cat">{{ product.category }}</span>{% endif %}
+                        <h2 class="pcard-name">{{ product.name }}</h2>
+                        <p class="pcard-verdict">
+                            {{ product.aiVerdict|striptags|slice(0, 110) }}{% if product.aiVerdict|length > 110 %}…{% endif %}
+                        </p>
+                        {% if product.pros|length %}
+                        <div class="pcard-pros">
+                            {% for pro in product.pros|slice(0, 2) %}
+                            <div class="pcard-pro">{{ pro }}</div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="pcard-foot">
+                        <div class="pcard-price"><small>{{ 'featured.from'|trans }}</small> R$ {{ product.currentPrice|number_format(2, ',', '.') }}</div>
+                        <div class="pcard-arrow"><i class="fas fa-arrow-right"></i></div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+</div>
+
+{# ── Como funciona ── #}
+<section class="how-section" aria-labelledby="how-title">
+    <div class="container">
+        <div class="section-eyebrow"><i class="fas fa-robot"></i> {{ 'how.eyebrow'|trans }}</div>
+        <h2 id="how-title" class="section-title">{{ 'how.title'|trans }}</h2>
+        <div class="row g-4 mt-0">
+            <div class="col-md-3 col-6"><div class="how-step"><div class="how-num">1</div><h3>{{ 'how.step1_title'|trans }}</h3><p>{{ 'how.step1_desc'|trans }}</p></div></div>
+            <div class="col-md-3 col-6"><div class="how-step"><div class="how-num">2</div><h3>{{ 'how.step2_title'|trans }}</h3><p>{{ 'how.step2_desc'|trans }}</p></div></div>
+            <div class="col-md-3 col-6"><div class="how-step"><div class="how-num">3</div><h3>{{ 'how.step3_title'|trans }}</h3><p>{{ 'how.step3_desc'|trans }}</p></div></div>
+            <div class="col-md-3 col-6"><div class="how-step"><div class="how-num">4</div><h3>{{ 'how.step4_title'|trans }}</h3><p>{{ 'how.step4_desc'|trans }}</p></div></div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

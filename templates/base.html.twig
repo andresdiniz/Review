@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="{{ app.request.locale|replace({'_': '-'}) }}" prefix="og: https://ogp.me/ns#">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    {# ── SEO ── #}
+    <title>{% block title %}{{ 'site.title'|trans }}{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}{{ 'site.description'|trans }}{% endblock %}">
+    <meta name="robots"      content="{% block meta_robots %}index, follow{% endblock %}">
+    <link rel="canonical"    href="{% block canonical %}{{ app.request.uri }}{% endblock %}">
+
+    {# ── Open Graph ── #}
+    <meta property="og:type"        content="{% block og_type %}website{% endblock %}">
+    <meta property="og:title"       content="{% block og_title %}ReviewIA — Reviews com Inteligência Artificial{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}{{ 'site.description'|trans }}{% endblock %}">
+    <meta property="og:url"         content="{{ app.request.uri }}">
+    <meta property="og:site_name"   content="ReviewIA">
+    <meta property="og:locale"      content="{{ app.request.locale }}">
+    {% block og_image %}<meta property="og:image" content="{{ app.request.schemeAndHttpHost }}/images/og-default.jpg">{% endblock %}
+
+    {# ── Twitter Card ── #}
+    <meta name="twitter:card"        content="summary_large_image">
+    <meta name="twitter:title"       content="{% block tw_title %}ReviewIA{% endblock %}">
+    <meta name="twitter:description" content="{% block tw_description %}{{ 'site.description'|trans }}{% endblock %}">
+    {% block tw_image %}{% endblock %}
+
+    {# ── Schema.org ── #}
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "ReviewIA",
+      "url": "{{ app.request.schemeAndHttpHost }}",
+      "inLanguage": "{{ app.request.locale|replace({'_': '-'}) }}",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": { "@type": "EntryPoint", "urlTemplate": "{{ app.request.schemeAndHttpHost }}/?search={search_term_string}" },
+        "query-input": "required name=search_term_string"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "ReviewIA",
+        "url": "{{ app.request.schemeAndHttpHost }}"
+      }
+    }
+    </script>
+    {% block structured_data %}{% endblock %}
+
+    {# ── Fontes Google ── #}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Serif+4:opsz,wght@8..60,300;8..60,400;8..60,600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+    {# ── CDN: Bootstrap + FontAwesome ── #}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    {# ── CSS do projeto (arquivo único) ── #}
+    <link rel="stylesheet" href="{{ asset('styles/app.css') }}">
+
+    {% block stylesheets %}{% endblock %}
+</head>
+<body>
+
+<div class="read-progress" aria-hidden="true">
+    <div class="read-progress-fill" id="readProgress"></div>
+</div>
+
+<header class="site-header" role="banner">
+    <div class="container">
+        <nav class="navbar navbar-expand-lg p-0" style="min-height:60px;" aria-label="{{ 'nav.main'|trans }}">
+            <a class="brand-wrap" href="{{ path('product_index') }}">
+                <div class="brand-icon">R</div>
+                <span class="brand-text">Review<span>IA</span></span>
+            </a>
+            <button class="navbar-toggler border-0 ms-auto" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#mainNav"
+                    style="color:var(--muted)">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="collapse navbar-collapse" id="mainNav">
+                <ul class="navbar-nav ms-auto align-items-center gap-1">
+                    <li class="nav-item"><a class="nav-lnk" href="{{ path('product_index') }}"><i class="fas fa-th-large me-1 opacity-75"></i>{{ 'nav.products'|trans }}</a></li>
+                    <li class="nav-item"><a class="nav-lnk" href="#"><i class="fas fa-fire me-1 opacity-75"></i>{{ 'nav.trending'|trans }}</a></li>
+                    <li class="nav-item"><a class="nav-lnk" href="#"><i class="fas fa-tag me-1 opacity-75"></i>{{ 'nav.deals'|trans }}</a></li>
+                </ul>
+                {# Seletor de idioma #}
+                <div class="ms-3 d-flex gap-1 align-items-center" aria-label="Idioma / Language">
+                    <a href="?_locale=pt_BR" class="lang-btn {{ app.request.locale starts with 'pt' ? 'active' : '' }}" title="Português">PT</a>
+                    <a href="?_locale=en"    class="lang-btn {{ app.request.locale == 'en' ? 'active' : '' }}"    title="English">EN</a>
+                    <a href="?_locale=es"    class="lang-btn {{ app.request.locale == 'es' ? 'active' : '' }}"    title="Español">ES</a>
+                </div>
+            </div>
+        </nav>
+    </div>
+</header>
+
+<main id="main-content" role="main">
+    {% block body %}{% endblock %}
+</main>
+
+<footer class="site-footer" role="contentinfo">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-lg-4 col-md-6">
+                <div class="footer-brand">Review<span>IA</span></div>
+                <p class="footer-desc">{{ 'footer.tagline'|trans }}</p>
+            </div>
+            <div class="col-lg-2 col-md-3 col-6">
+                <div class="f-title">{{ 'footer.nav_title'|trans }}</div>
+                <nav aria-label="{{ 'footer.nav_title'|trans }}">
+                    <a class="f-link" href="{{ path('product_index') }}">{{ 'footer.all_products'|trans }}</a>
+                    <a class="f-link" href="#">{{ 'footer.trending'|trans }}</a>
+                    <a class="f-link" href="#">{{ 'footer.deals'|trans }}</a>
+                    <a class="f-link" href="#">{{ 'footer.categories'|trans }}</a>
+                </nav>
+            </div>
+            <div class="col-lg-2 col-md-3 col-6">
+                <div class="f-title">{{ 'footer.info_title'|trans }}</div>
+                <nav aria-label="{{ 'footer.info_title'|trans }}">
+                    <a class="f-link" href="#">{{ 'footer.about'|trans }}</a>
+                    <a class="f-link" href="#">{{ 'footer.how_it_works'|trans }}</a>
+                    <a class="f-link" href="#">{{ 'footer.affiliates'|trans }}</a>
+                    <a class="f-link" href="#">{{ 'footer.privacy'|trans }}</a>
+                </nav>
+            </div>
+            <div class="col-lg-4 col-md-12">
+                <div class="f-title">{{ 'footer.transparency'|trans }}</div>
+                <p style="font-size:.8125rem;line-height:1.6;color:#555;">{{ 'footer.disclosure'|trans }}</p>
+            </div>
+        </div>
+        <div class="f-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <span>{{ 'footer.copyright'|trans({'%year%': "now"|date("Y")}) }}</span>
+            <span>{{ 'footer.made_with'|trans }} <i class="fas fa-heart" style="color:#e53e3e;font-size:.75rem;margin:0 .2rem;"></i> {{ 'footer.and_ai'|trans }}</span>
+        </div>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+{# JS do projeto (arquivo único) #}
+<script src="{{ asset('app.js') }}" defer></script>
+{% block javascripts %}{% endblock %}
+</body>
+</html>

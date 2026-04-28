@@ -1,0 +1,10 @@
+# config/packages/twig.yaml
+twig:
+    default_path: '%kernel.project_dir%/templates'
+    form_themes: ['bootstrap_5_layout.html.twig']
+    # Adicione o filtro markdown_to_html
+    # Ele já está disponível se instalou twig/markdown-extra
+    
+when@test:
+    twig:
+        strict_variables: true

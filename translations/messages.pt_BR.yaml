@@ -1,0 +1,151 @@
+# translations/messages.pt_BR.yaml
+
+site:
+  title:       "Reviews Completos | Review"
+  description: "Reviews honestos e completos gerados com IA. Prós, contras, veredito e melhor preço para você tomar a melhor decisão de compra."
+
+nav:
+  main:      "Navegação principal"
+  products:  "Produtos"
+  trending:  "Mais Buscados"
+  deals:     "Promoções"
+
+hero:
+  eyebrow:     "Powered by Inteligência Artificial"
+  title:       "Reviews que você pode <em>confiar</em>"
+  subtitle:    "Análise completa de produtos com IA. Prós, contras, veredito honesto e o melhor preço — para você comprar com segurança."
+  search:      "Buscar produto, marca ou categoria…"
+  search_btn:  "Buscar"
+  trust_1:     "Reviews independentes"
+  trust_2:     "Atualizado diariamente"
+  trust_3:     "Sem viés publicitário"
+  trust_count: "%count% produtos avaliados"
+  card_label:  "Nota ReviewIA"
+  card_verdict: "Excelente produto"
+
+categories:
+  label:   "Categorias:"
+  all:     "Todos"
+  tech:    "Eletrônicos"
+  home:    "Casa"
+  sport:   "Esporte"
+  health:  "Saúde & Beleza"
+  baby:    "Bebês"
+  pets:    "Pets"
+  kitchen: "Cozinha"
+
+featured:
+  eyebrow: "Destaque da semana"
+  title:   "Review em Destaque"
+  badge:   "Mais lido"
+  from:    "A partir de"
+  read:    "Ler review"
+
+grid:
+  eyebrow:    "Todos os reviews"
+  count_one:  "%count% produto avaliado"
+  count_many: "%count% produtos avaliados"
+  sort_all:   "Todos"
+  sort_score: "Melhor nota"
+  sort_price: "Menor preço"
+  sort_new:   "Mais recentes"
+
+how:
+  eyebrow:     "Metodologia"
+  title:       "Como funcionam nossos reviews com IA?"
+  step1_title: "Coleta de dados"
+  step1_desc:  "A IA coleta especificações técnicas, avaliações reais e informações do fabricante."
+  step2_title: "Análise profunda"
+  step2_desc:  "Processamos prós, contras e pontos de atenção com base em centenas de critérios."
+  step3_title: "Veredito honesto"
+  step3_desc:  "Geramos um veredito imparcial, sem influência de anunciantes ou fabricantes."
+  step4_title: "Melhor preço"
+  step4_desc:  "Monitoramos o preço em tempo real para garantir o melhor custo-benefício para você."
+
+empty:
+  title: "Nenhum produto ainda"
+  desc:  "Em breve novos reviews serão publicados aqui."
+
+product:
+  review_with_ai:  "Review com IA"
+  ai_verdict:      "Veredito da IA"
+  share:           "Compartilhar:"
+  summary:         "Resumo Rápido"
+  current_price:   "💰 Preço atual"
+  pros_count:      "✅ Pontos positivos"
+  cons_count:      "❌ Pontos negativos"
+  analysis_type:   "🤖 Tipo de análise"
+  ai_independent:  "IA Independente"
+  recommendation:  "⭐ Recomendação"
+  recommended:     "Recomendado"
+  evaluate:        "Avaliar"
+  updated_at:      "📅 Atualizado em"
+  toc_title:       "Neste review"
+  toc_video:       "Vídeo review"
+  toc_pros_cons:   "Prós e contras"
+  toc_full:        "Review completo"
+  toc_faq:         "Perguntas frequentes"
+  pros_title:      "O que é bom"
+  cons_title:      "O que não agrada"
+  video_watch:     "Assistir ao review completo"
+  faq_title:       "❓ Perguntas Frequentes sobre %name%"
+  faq_q1:          "%name% vale a pena comprar?"
+  faq_q2:          "Qual o preço atual de %name%?"
+  faq_q3:          "Quais são os principais benefícios de %name%?"
+  faq_q4:          "Quais são as desvantagens de %name%?"
+  faq_q5:          "Como este review de %name% foi feito?"
+  faq_a2:          "O preço atual de %name% é <strong>R$ %price%</strong>. Use o botão de compra nesta página para garantir o preço atualizado."
+  faq_a3:          "Os principais pontos positivos de %name% são:"
+  faq_a4:          "As principais desvantagens de %name% são:"
+  faq_a5:          "Este review foi gerado por Inteligência Artificial com base em dados reais, especificações técnicas e avaliações de compradores. É 100% independente e sem influência de anunciantes."
+  score_excellent: "⭐ Excelente — altamente recomendado"
+  score_good:      "👍 Muito bom — vale a pena"
+  score_average:   "😐 Regular — avalie alternativas"
+  score_poor:      "⚠️ Abaixo da média"
+  score_exc:       "⭐ Excelente"
+  score_good_lbl:  "👍 Muito bom"
+  score_avg_lbl:   "😐 Regular"
+  score_poor_lbl:  "⚠️ Fraco"
+  score_suffix:    "— nota geral"
+
+buy:
+  best_price:  "Melhor preço disponível"
+  price_note:  "Preço verificado hoje · Pode variar na loja"
+  buy_now:     "Comprar agora"
+  affiliate:   "Link de afiliado — sem custo extra"
+
+trust:
+  ai_review:   "Análise 100% gerada por IA"
+  independent: "Review independente"
+  no_bias:     "Zero viés publicitário"
+  realtime:    "Preço atualizado em tempo real"
+  secure:      "Link seguro e confiável"
+
+footer:
+  tagline:      "Reviews honestos e completos gerados com Inteligência Artificial. Ajudamos você a tomar a melhor decisão de compra."
+  nav_title:    "Navegar"
+  info_title:   "Info"
+  all_products: "Todos os produtos"
+  trending:     "Mais buscados"
+  deals:        "Promoções"
+  categories:   "Categorias"
+  about:        "Sobre nós"
+  how_it_works: "Como funciona"
+  affiliates:   "Afiliados"
+  privacy:      "Privacidade"
+  transparency: "Transparência"
+  disclosure:   "Este site contém links de afiliados. Podemos receber comissão sobre vendas, sem custo adicional para você. Nossos reviews são independentes e baseados em análise de IA e dados reais."
+  copyright:    "© %year% ReviewIA — Todos os direitos reservados."
+  made_with:    "Feito com"
+  and_ai:       "e Inteligência Artificial"
+
+login:
+  subtitle:          "Entre para acessar o painel administrativo"
+  email:             "E-mail"
+  password:          "Senha"
+  submit:            "Entrar"
+  placeholder_email: "seu@email.com"
+
+breadcrumb:
+  home:     "Início"
+  products: "Produtos"

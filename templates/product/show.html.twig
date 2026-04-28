@@ -1,0 +1,415 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ product.name }} — Review Completo com IA | ReviewIA{% endblock %}
+{% block meta_description %}Review de {{ product.name }}: prós, contras, preço R$ {{ product.currentPrice|number_format(2,',','.') }} e onde comprar. Análise por IA.{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_title %}{{ product.name }} — Vale a Pena? Veja o Review Completo com IA{% endblock %}
+{% block og_description %}{{ product.aiVerdict|striptags|slice(0,160) }}{% endblock %}
+{% block og_image %}
+    <meta property="og:image" content="{{ product.imageUrl ?? (app.request.schemeAndHttpHost ~ '/images/og-default.jpg') }}">
+{% endblock %}
+{% block tw_title %}{{ product.name }} — Review com IA | ReviewIA{% endblock %}
+{% block tw_description %}{{ product.aiVerdict|striptags|slice(0,140) }}{% endblock %}
+{% block tw_image %}<meta name="twitter:image" content="{{ product.imageUrl ?? '' }}">{% endblock %}
+
+{% block structured_data %}
+{#
+  CORRIGIDO:
+  1. priceValidUntil adicionado (evita que o Google marque o preço como "expirado")
+  2. reviewRating adicionado ao Review (gera as estrelas nos resultados de busca)
+  3. FAQPage adicionado como terceiro item do array JSON-LD
+#}
+<script type="application/ld+json">
+[
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {"@type": "ListItem", "position": 1, "name": "{{ 'breadcrumb.home'|trans|e('js') }}", "item": "{{ url('product_index') }}"},
+      {"@type": "ListItem", "position": 2, "name": "{{ 'breadcrumb.products'|trans|e('js') }}", "item": "{{ url('product_index') }}"},
+      {"@type": "ListItem", "position": 3, "name": "{{ product.name|e('js') }}", "item": "{{ url('product_show', {slug: product.slug}) }}"}
+    ]
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": "{{ product.name|e('js') }}",
+    "description": "{{ product.aiVerdict|striptags|e('js') }}",
+    {% if product.imageUrl %}"image": "{{ product.imageUrl }}",{% endif %}
+    "offers": {
+      "@type": "Offer",
+      "price": "{{ product.currentPrice }}",
+      "priceCurrency": "BRL",
+      "availability": "https://schema.org/InStock",
+      "url": "{{ product.affiliateLink }}",
+      "priceValidUntil": "{{ "now"|modify("+30 days")|date("Y-m-d") }}"
+    },
+    "review": {
+      "@type": "Review",
+      "reviewBody": "{{ product.aiVerdict|striptags|e('js') }}",
+      "author": {"@type": "Organization", "name": "ReviewIA"},
+      "datePublished": "{{ product.createdAt ? product.createdAt|date('Y-m-d') : 'now'|date('Y-m-d') }}",
+      {% if product.score %}
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "{{ product.score }}",
+        "bestRating": "10",
+        "worstRating": "0"
+      }
+      {% endif %}
+    }
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "{{ 'product.faq_q1'|trans({'%name%': product.name})|e('js') }}",
+        "acceptedAnswer": {"@type": "Answer", "text": "{{ product.aiVerdict|striptags|e('js') }}"}
+      },
+      {
+        "@type": "Question",
+        "name": "{{ 'product.faq_q2'|trans({'%name%': product.name})|e('js') }}",
+        "acceptedAnswer": {"@type": "Answer", "text": "{{ 'product.faq_a2'|trans({'%name%': product.name, '%price%': product.currentPrice|number_format(2,',','.')})|e('js') }}"}
+      },
+      {
+        "@type": "Question",
+        "name": "{{ 'product.faq_q5'|trans({'%name%': product.name})|e('js') }}",
+        "acceptedAnswer": {"@type": "Answer", "text": "{{ 'product.faq_a5'|trans({'%name%': product.name})|e('js') }}"}
+      }
+    ]
+  }
+]
+</script>
+{% endblock %}
+
+{% block body %}
+<article itemscope itemtype="https://schema.org/Product">
+<meta itemprop="name" content="{{ product.name }}">
+
+{# ── Breadcrumb ── #}
+<nav class="bc-bar" aria-label="{{ 'breadcrumb.home'|trans }}">
+    <div class="container">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ path('product_index') }}"><i class="fas fa-home me-1"></i>{{ 'breadcrumb.home'|trans }}</a></li>
+            <li class="breadcrumb-item"><a href="{{ path('product_index') }}">{{ 'breadcrumb.products'|trans }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ product.name|slice(0,40) }}{% if product.name|length > 40 %}…{% endif %}</li>
+        </ol>
+    </div>
+</nav>
+
+{# ── Hero do produto ── #}
+<header class="product-hero">
+    <div class="container hero-z">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-7">
+                <div class="hero-eyebrow-row">
+                    {% if product.category %}
+                    <span class="hero-cat-badge"><i class="fas fa-tag"></i>{{ product.category }}</span>
+                    <span style="color:#30363d;">·</span>
+                    {% endif %}
+                    <span class="hero-tag-pill"><i class="fas fa-robot me-1"></i>{{ 'product.review_with_ai'|trans }}</span>
+                    {# CORRIGIDO: product.updatedAt agora usa o método getUpdatedAt()
+                       adicionado à entidade (retorna lastUpdateAt ?? createdAt) #}
+                    <span class="hero-tag-pill">
+                        <i class="fas fa-calendar-alt me-1"></i>{{ product.updatedAt ? product.updatedAt|date('d/m/Y') : 'now'|date('d/m/Y') }}
+                    </span>
+                </div>
+
+                <h1 class="product-headline">{{ product.name }}</h1>
+
+                {# CORRIGIDO: product.score agora existe na entidade (campo DECIMAL 4,1) #}
+                {% if product.score %}
+                {% set circ = 2 * 3.14159 * 36 %}
+                {% set dash = circ - (circ * product.score / 10) %}
+                <div class="hero-score-row">
+                    <div class="score-ring-wrap">
+                        <svg viewBox="0 0 80 80" width="80" height="80" aria-hidden="true">
+                            <circle class="score-ring-bg"   cx="40" cy="40" r="36"/>
+                            <circle class="score-ring-fill" cx="40" cy="40" r="36"
+                                stroke-dasharray="{{ circ }}" stroke-dashoffset="{{ circ }}"
+                                data-offset="{{ dash }}" id="ringFill"/>
+                        </svg>
+                        <div class="score-ring-text">
+                            <span class="score-ring-num">{{ product.score }}</span>
+                            <span class="score-ring-den">/10</span>
+                        </div>
+                    </div>
+                    <div class="hero-score-meta">
+                        <div class="hero-score-stars" itemprop="aggregateRating" itemscope itemtype="https://schema.org/AggregateRating">
+                            <meta itemprop="ratingValue" content="{{ product.score }}">
+                            <meta itemprop="bestRating"  content="10">
+                            {% set s = (product.score / 2)|round(0, 'floor') %}
+                            {% for i in 1..5 %}
+                                {% if i <= s %}<i class="fas fa-star"></i>
+                                {% elseif i == s + 1 and (product.score / 2 - s) >= 0.5 %}<i class="fas fa-star-half-alt"></i>
+                                {% else %}<i class="far fa-star"></i>
+                                {% endif %}
+                            {% endfor %}
+                            <span>{{ (product.score / 2)|number_format(1) }} / 5</span>
+                        </div>
+                        <div class="hero-score-label">
+                            {% if product.score >= 9 %}{{ 'product.score_excellent'|trans }}
+                            {% elseif product.score >= 7 %}{{ 'product.score_good'|trans }}
+                            {% elseif product.score >= 5 %}{{ 'product.score_average'|trans }}
+                            {% else %}{{ 'product.score_poor'|trans }}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="hero-verdict">
+                    <div class="hero-verdict-label"><i class="fas fa-robot"></i> {{ 'product.ai_verdict'|trans }}</div>
+                    <p class="verdict-text">{{ product.aiVerdict }}</p>
+                </div>
+
+                <div class="share-row">
+                    <span class="share-label">{{ 'product.share'|trans }}</span>
+                    <a href="https://wa.me/?text={{ (product.name ~ ': ' ~ app.request.uri)|url_encode }}"
+                       target="_blank" rel="noopener" class="share-btn share-wa"
+                       aria-label="Compartilhar no WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                    <a href="https://t.me/share/url?url={{ app.request.uri|url_encode }}&text={{ product.name|url_encode }}"
+                       target="_blank" rel="noopener" class="share-btn share-tg"
+                       aria-label="Compartilhar no Telegram"><i class="fab fa-telegram-plane"></i></a>
+                    <a href="https://twitter.com/intent/tweet?text={{ product.name|url_encode }}&url={{ app.request.uri|url_encode }}"
+                       target="_blank" rel="noopener" class="share-btn share-tw"
+                       aria-label="Compartilhar no Twitter/X"><i class="fab fa-twitter"></i></a>
+                    <button class="share-btn share-cp" id="copyBtn" aria-label="Copiar link"><i class="fas fa-link"></i></button>
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="hero-product-img" itemprop="image">
+                    {% if product.imageUrl %}
+                        <img src="{{ product.imageUrl }}" alt="{{ product.name }}" loading="eager">
+                    {% else %}
+                        <div class="hero-product-img-ph"><i class="fas fa-box"></i></div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+{# ── Conteúdo ── #}
+<div class="product-layout">
+    <div class="container">
+        <div class="row g-4 g-xl-5">
+
+            {# ── Main ── #}
+            <div class="col-lg-8">
+
+                {# Resumo rápido #}
+                <div class="quick-verdict-box reveal">
+                    <div class="qvb-header">
+                        <div class="qvb-header-title"><i class="fas fa-bolt"></i> {{ 'product.summary'|trans }}</div>
+                        {% if product.score %}<span class="qvb-score-chip">{{ product.score }}/10</span>{% endif %}
+                    </div>
+                    <div class="qvb-body">
+                        <div class="qvb-row">
+                            <span class="qvb-k">{{ 'product.current_price'|trans }}</span>
+                            <span class="qvb-v">R$ {{ product.currentPrice|number_format(2,',','.') }}</span>
+                        </div>
+                        <div class="qvb-row">
+                            <span class="qvb-k">{{ 'product.pros_count'|trans }}</span>
+                            <span class="qvb-v">{{ product.pros|length }}</span>
+                        </div>
+                        <div class="qvb-row">
+                            <span class="qvb-k">{{ 'product.cons_count'|trans }}</span>
+                            <span class="qvb-v">{{ product.cons|length }}</span>
+                        </div>
+                        <div class="qvb-row">
+                            <span class="qvb-k">{{ 'product.analysis_type'|trans }}</span>
+                            <span class="qvb-v">{{ 'product.ai_independent'|trans }}</span>
+                        </div>
+                        {% if product.score %}
+                        <div class="qvb-row">
+                            <span class="qvb-k">{{ 'product.recommendation'|trans }}</span>
+                            <span class="qvb-v">{{ product.score >= 7 ? 'product.recommended'|trans : 'product.evaluate'|trans }}</span>
+                        </div>
+                        {% endif %}
+                        {# CORRIGIDO: product.updatedAt usa o alias getUpdatedAt() da entidade #}
+                        <div class="qvb-row">
+                            <span class="qvb-k">{{ 'product.updated_at'|trans }}</span>
+                            <span class="qvb-v">{{ product.updatedAt ? product.updatedAt|date('d/m/Y') : 'now'|date('d/m/Y') }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {# TOC #}
+                <nav class="toc reveal" aria-label="Índice do review">
+                    <div class="toc-title">{{ 'product.toc_title'|trans }}</div>
+                    {% if product.youtubeVideoId %}<a href="#video"><span class="toc-icon">📹</span> {{ 'product.toc_video'|trans }}</a>{% endif %}
+                    <a href="#pros-cons"><span class="toc-icon">⚖️</span> {{ 'product.toc_pros_cons'|trans }}</a>
+                    <a href="#review-completo"><span class="toc-icon">📄</span> {{ 'product.toc_full'|trans }}</a>
+                    <a href="#faq"><span class="toc-icon">❓</span> {{ 'product.toc_faq'|trans }}</a>
+                </nav>
+
+                {# Vídeo #}
+                {% if product.youtubeVideoId %}
+                <section id="video" class="reveal">
+                    <h2>{{ 'product.toc_video'|trans }}</h2>
+                    <div class="video-wrap">
+                        <div class="video-header"><i class="fab fa-youtube"></i> {{ 'product.video_watch'|trans }}</div>
+                        <div class="ratio ratio-16x9">
+                            <iframe src="https://www.youtube.com/embed/{{ product.youtubeVideoId }}"
+                                    title="Vídeo review: {{ product.name }}"
+                                    allowfullscreen loading="lazy"></iframe>
+                        </div>
+                    </div>
+                </section>
+                {% endif %}
+
+                {# Prós e contras #}
+                <section id="pros-cons" class="pc-section reveal">
+                    <h2>{{ 'product.toc_pros_cons'|trans }} — {{ product.name }}</h2>
+                    <div class="pc-grid">
+                        <div class="pc-box pc-pros">
+                            <div class="pc-head"><i class="fas fa-thumbs-up"></i> {{ 'product.pros_title'|trans }}</div>
+                            {% for pro in product.pros %}
+                            <div class="pc-item"><i class="fas fa-check pc-icon"></i><span>{{ pro }}</span></div>
+                            {% endfor %}
+                        </div>
+                        <div class="pc-box pc-cons">
+                            <div class="pc-head"><i class="fas fa-thumbs-down"></i> {{ 'product.cons_title'|trans }}</div>
+                            {% for con in product.cons %}
+                            <div class="pc-item"><i class="fas fa-times pc-icon"></i><span>{{ con }}</span></div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </section>
+
+                {# Review completo #}
+                <section id="review-completo" class="reveal">
+                    <h2>{{ 'product.toc_full'|trans }}</h2>
+                    <div class="review-article">{{ product.fullReviewMarkdown|markdown_to_html }}</div>
+                </section>
+
+                {# ── FAQ ──
+                   CORRIGIDO: microdados itemscope/itemprop adicionados em cada item
+                   para que o Google processe o schema FAQPage corretamente.
+                #}
+                <section id="faq" class="faq-wrap reveal" itemscope itemtype="https://schema.org/FAQPage">
+                    <h2 class="faq-wrap-title">{{ 'product.faq_title'|trans({'%name%': product.name}) }}</h2>
+                    {% set faqs = [
+                        { q: 'product.faq_q1'|trans({'%name%': product.name}), a: product.aiVerdict },
+                        { q: 'product.faq_q2'|trans({'%name%': product.name}), a: 'product.faq_a2'|trans({'%name%': product.name, '%price%': product.currentPrice|number_format(2,',','.')}), raw: true },
+                        { q: 'product.faq_q3'|trans({'%name%': product.name}), a: 'product.faq_a3'|trans({'%name%': product.name}), list: product.pros },
+                        { q: 'product.faq_q4'|trans({'%name%': product.name}), a: 'product.faq_a4'|trans({'%name%': product.name}), list: product.cons },
+                        { q: 'product.faq_q5'|trans({'%name%': product.name}), a: 'product.faq_a5'|trans({'%name%': product.name}) }
+                    ] %}
+                    {% for faq in faqs %}
+                    <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+                        <div class="faq-q" itemprop="name">
+                            {{ faq.q }}<i class="fas fa-chevron-down faq-chevron"></i>
+                        </div>
+                        <div class="faq-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+                            <div class="faq-a-inner" itemprop="text">
+                                {{ faq.raw is defined and faq.raw ? faq.a|raw : faq.a }}
+                                {% if faq.list is defined and faq.list|length %}
+                                <ul>{% for item in faq.list %}<li>{{ item }}</li>{% endfor %}</ul>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </section>
+
+            </div>{# /col-lg-8 #}
+
+            {# ── Sidebar ── #}
+            <aside class="col-lg-4">
+                <div class="sidebar-sticky">
+
+                    {# Box de compra #}
+                    <div class="buy-box">
+                        <div class="buy-box-top">
+                            <div class="buy-price-label">{{ 'buy.best_price'|trans }}</div>
+                            <div class="buy-price" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+                                <meta itemprop="priceCurrency" content="BRL">
+                                <meta itemprop="price" content="{{ product.currentPrice }}">
+                                <meta itemprop="availability" content="https://schema.org/InStock">
+                                <span class="currency">R$</span>{{ product.currentPrice|number_format(2,',','.') }}
+                            </div>
+                            {# CORRIGIDO: exibe a data real de atualização (getUpdatedAt) #}
+                            <div class="buy-price-note">
+                                <i class="fas fa-sync-alt"></i>
+                                Verificado em: {{ product.updatedAt ? product.updatedAt|date('d/m/Y') : 'now'|date('d/m/Y') }}
+                            </div>
+                        </div>
+                        <div class="buy-box-body">
+                            <a href="{{ product.affiliateLink }}"
+                               target="_blank"
+                               rel="nofollow noopener sponsored"
+                               class="btn-buy-cta">
+                                <i class="fas fa-shopping-cart"></i> {{ 'buy.buy_now'|trans }} <i class="fas fa-external-link-alt"></i>
+                            </a>
+                            <p class="affiliate-note"><i class="fas fa-info-circle"></i> {{ 'buy.affiliate'|trans }}</p>
+                        </div>
+                    </div>
+
+                    {# Score gauge #}
+                    {# CORRIGIDO: usa product.score (campo agora existente na entidade) #}
+                    {% if product.score %}
+                    {% set circG = 125.66 %}
+                    <div class="buy-box" style="padding:1.25rem;">
+                        <div class="score-gauge-wrap">
+                            <div class="gauge-svg-wrap">
+                                <svg viewBox="0 0 100 55" width="120" height="66" aria-hidden="true">
+                                    <path class="gauge-bg"   d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke-width="9"/>
+                                    <path class="gauge-fill" id="gaugeFill" d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke-width="9"
+                                          stroke-dasharray="{{ circG }}" stroke-dashoffset="{{ circG }}"
+                                          data-target="{{ circG * (1 - product.score / 10) }}"/>
+                                </svg>
+                                <div class="gauge-num">{{ product.score }}</div>
+                            </div>
+                            <div class="gauge-den">/10</div>
+                            <div class="score-label mt-1">
+                                {% if product.score >= 9 %}{{ 'product.score_exc'|trans }}
+                                {% elseif product.score >= 7 %}{{ 'product.score_good_lbl'|trans }}
+                                {% elseif product.score >= 5 %}{{ 'product.score_avg_lbl'|trans }}
+                                {% else %}{{ 'product.score_poor_lbl'|trans }}
+                                {% endif %}
+                                <small>{{ 'product.score_suffix'|trans }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {# Trust #}
+                    <div class="trust-box">
+                        <div class="trust-item"><i class="fas fa-robot"></i> {{ 'trust.ai_review'|trans }}</div>
+                        <div class="trust-item"><i class="fas fa-shield-alt"></i> {{ 'trust.independent'|trans }}</div>
+                        <div class="trust-item"><i class="fas fa-ban"></i> {{ 'trust.no_bias'|trans }}</div>
+                        <div class="trust-item"><i class="fas fa-sync-alt"></i> {{ 'trust.realtime'|trans }}</div>
+                        <div class="trust-item"><i class="fas fa-lock"></i> {{ 'trust.secure'|trans }}</div>
+                    </div>
+
+                    {# Produtos relacionados (sidebar) #}
+                    {% if related is defined and related|length %}
+                    <div class="related-box buy-box" style="padding:1.25rem;">
+                        <div class="buy-price-label" style="margin-bottom:.75rem;">Produtos similares</div>
+                        {% for rel in related %}
+                        <a href="{{ path('product_show', {slug: rel.slug}) }}" class="related-item">
+                            {% if rel.imageUrl %}
+                            <img src="{{ rel.imageUrl }}" alt="{{ rel.name }}" loading="lazy" width="48" height="48">
+                            {% endif %}
+                            <div>
+                                <div class="related-name">{{ rel.name|slice(0,50) }}</div>
+                                <div class="related-price">R$ {{ rel.currentPrice|number_format(2,',','.') }}</div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                </div>
+            </aside>
+
+        </div>
+    </div>
+</div>
+</article>
+{% endblock %}
