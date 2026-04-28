@@ -8,13 +8,10 @@ use App\Entity\User;
 use App\Repository\ProductRepository;
 use App\Repository\UserRepository;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
+use EasyCorp\Bundle\EasyAdminBundle\Collection\KeyValueStore;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
-use EasyCorp\Bundle\EasyAdminBundle\Context\AdminContext;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
-use EasyCorp\Bundle\EasyAdminBundle\Factory\AdminContextFactory;
-use EasyCorp\Bundle\EasyAdminBundle\Registry\DashboardControllerRegistry;
-use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 
 #[AdminDashboard(routePath: '/admin', routeName: 'admin')]
@@ -22,27 +19,26 @@ class DashboardController extends AbstractDashboardController
 {
     public function __construct(
         private ProductRepository $productRepository,
-        private UserRepository $userRepository,
-        private AdminContextFactory $adminContextFactory,
-        private RequestStack $requestStack,
-        private DashboardControllerRegistry $dashboardControllerRegistry
+        private UserRepository $userRepository
     ) {}
 
     public function index(): Response
     {
-        $request = $this->requestStack->getCurrentRequest();
-        $context = $this->adminContextFactory->create($request, $this, null);
-        $request->attributes->set(AdminContext::class, $context);
+        return parent::index();
+    }
 
-        $productStats   = $this->productRepository->getStats();
-        $totalUsers     = count($this->userRepository->findAll());
-        $latestProducts = $this->productRepository->findLatest(5);
+    public function configureResponseParameters(): KeyValueStore
+    {
+        $params = parent::configureResponseParameters();
 
-        return $this->render('admin/dashboard.html.twig', [
-            'product_stats'   => $productStats,
-            'total_users'     => $totalUsers,
-            'latest_products' => $latestProducts,
-        ]);
+        $params->set('pageName', 'dashboard');
+        $params->set('templateName', 'layout');
+        $params->set('templatePath', '@EasyAdmin/page/content.html.twig');
+        $params->set('product_stats',   $this->productRepository->getStats());
+        $params->set('total_users',     count($this->userRepository->findAll()));
+        $params->set('latest_products', $this->productRepository->findLatest(5));
+
+        return $params;
     }
 
     public function configureDashboard(): Dashboard
