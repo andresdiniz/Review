@@ -3,12 +3,10 @@
 
 namespace App\Service;
 
-use App\Service\MercadoLivreService;
-
 class ProductAIService
 {
     public function __construct(
-        private MercadoLivreService $mercadoLivreService,
+        private MercadoLivreScraperService $mercadoLivreService,
         private GeminiService $geminiService
     ) {}
 
@@ -18,41 +16,39 @@ class ProductAIService
      */
     public function generateFromAffiliateLink(string $url): array
     {
-        // 1. Extrai ID do ML da URL
-        $mlId = $this->mercadoLivreService->extractIdFromUrl($url);
+        // 1. Extrai ID e dados do ML via scraper
+        $mlData = $this->mercadoLivreService->extractFromUrl($url);
+
+        $mlId = $mlData['mercadolivreId'] ?? null;
 
         if (!$mlId) {
             throw new \InvalidArgumentException('URL inválida. Não foi possível extrair o ID do Mercado Livre.');
         }
 
-        // 2. Busca dados do produto na API do ML
-        $mlData = $this->mercadoLivreService->getProductData($mlId);
-
-        // 3. Gera análise com IA
+        // 2. Gera análise com IA
         $aiData = $this->geminiService->analyzeProduct([
-            'name'        => $mlData['title']       ?? '',
+            'name'        => $mlData['name']        ?? '',
             'price'       => $mlData['price']        ?? 0,
             'description' => $mlData['description']  ?? '',
         ]);
 
-        // 4. Gera slug
-        $slug = $this->generateSlug($mlData['title'] ?? 'produto');
+        // 3. Gera slug
+        $slug = $this->generateSlug($mlData['name'] ?? 'produto');
 
         return [
-            'name'               => $mlData['title']         ?? 'Produto sem nome',
+            'name'               => $mlData['name']          ?? 'Produto sem nome',
             'slug'               => $slug,
             'currentPrice'       => (string) ($mlData['price'] ?? '0.00'),
             'affiliateLink'      => $url,
-            'imageUrl'           => $mlData['thumbnail']     ?? null,
+            'imageUrl'           => $mlData['imageUrl']       ?? null,
             'mercadolivreId'     => $mlId,
-            'category'           => $mlData['category_name'] ?? null,
+            'category'           => $mlData['category']       ?? null,
             'youtubeVideoId'     => null,
             // IA
             'aiVerdict'          => $aiData['aiVerdict'],
             'pros'               => $aiData['pros'],
             'cons'               => $aiData['cons'],
             'fullReviewMarkdown' => $aiData['fullReviewMarkdown'],
-            // ── bug #6 corrigido: score propagado ─────────────────────────
             'score'              => $aiData['score'] ?? null,
         ];
     }
