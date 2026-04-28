@@ -1,4 +1,4 @@
-{% extends '@EasyAdmin/layout.html.twig' %}
+{% extends '@EasyAdmin/page/content.html.twig' %}
 
 {% block content_title %}Dashboard{% endblock %}
 
@@ -47,38 +47,27 @@
   .card-head {
     padding: 1rem 1.5rem;
     border-bottom: 1px solid #f3f4f6;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    display: flex; align-items: center; justify-content: space-between;
   }
   .card-head span { font-weight: 700; font-size: .95rem; color: #111827; }
   .dash-table-wrap { overflow-x: auto; }
   .dash-table { width: 100%; border-collapse: collapse; }
   .dash-table thead th {
-    padding: .75rem 1rem;
-    font-size: .72rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-    color: #9ca3af;
-    background: #fafafa;
-    border-bottom: 1px solid #f3f4f6;
-    white-space: nowrap;
+    padding: .75rem 1rem; font-size: .72rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .06em;
+    color: #9ca3af; background: #fafafa;
+    border-bottom: 1px solid #f3f4f6; white-space: nowrap;
   }
   .dash-table tbody tr { transition: background .15s; }
   .dash-table tbody tr:hover { background: #f9fafb; }
   .dash-table tbody td {
-    padding: .9rem 1rem;
-    font-size: .875rem;
-    color: #374151;
-    border-bottom: 1px solid #f3f4f6;
-    vertical-align: middle;
+    padding: .9rem 1rem; font-size: .875rem; color: #374151;
+    border-bottom: 1px solid #f3f4f6; vertical-align: middle;
   }
   .dash-table tbody tr:last-child td { border-bottom: none; }
   .prod-img { width: 44px; height: 44px; object-fit: cover; border-radius: 10px; box-shadow: 0 1px 6px rgba(0,0,0,.1); }
   .prod-img-placeholder {
-    width: 44px; height: 44px; border-radius: 10px;
-    background: #f3f4f6;
+    width: 44px; height: 44px; border-radius: 10px; background: #f3f4f6;
     display: flex; align-items: center; justify-content: center;
     color: #d1d5db; font-size: 1.1rem;
   }
@@ -143,7 +132,8 @@
     <table class="dash-table">
       <thead>
         <tr>
-          <th>Imagem</th><th>Nome</th><th>Categoria</th><th>Preço</th><th>Nota IA</th><th>Criado em</th><th></th>
+          <th>Imagem</th><th>Nome</th><th>Categoria</th>
+          <th>Preço</th><th>Nota IA</th><th>Criado em</th><th></th>
         </tr>
       </thead>
       <tbody>
@@ -191,6 +181,10 @@
 
 <script>
 (function () {
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { animateCount(e.target); obs.unobserve(e.target); } });
+  }, { threshold: 0.3 });
+
   function animateCount(el) {
     const target = parseFloat(el.dataset.count) || 0;
     const dec    = parseInt(el.dataset.decimals) || 0;
@@ -205,17 +199,9 @@
     };
     requestAnimationFrame(step);
   }
-  new IntersectionObserver((entries) => {
-    entries.forEach(e => { if (e.isIntersecting) { animateCount(e.target); } });
-  }, { threshold: 0.3 }).observe.bind(
-    new IntersectionObserver((entries) => {
-      entries.forEach(e => { if (e.isIntersecting) { animateCount(e.target); } });
-    }, { threshold: 0.3 })
-  );
-  const obs = new IntersectionObserver((entries) => {
-    entries.forEach(e => { if (e.isIntersecting) { animateCount(e.target); } });
-  }, { threshold: 0.3 });
+
   document.querySelectorAll('[data-count]').forEach(el => obs.observe(el));
+
   document.querySelectorAll('.dash-table tbody tr').forEach((row, i) => {
     row.style.cssText = 'opacity:0;transform:translateY(10px);transition:opacity .3s ease,transform .3s ease';
     setTimeout(() => { row.style.opacity = '1'; row.style.transform = 'translateY(0)'; }, 80 + i * 60);
