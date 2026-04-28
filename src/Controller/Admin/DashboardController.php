@@ -11,6 +11,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
+use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
 use Symfony\Component\HttpFoundation\Response;
 
 #[AdminDashboard(routePath: '/admin', routeName: 'admin')]
@@ -18,7 +19,8 @@ class DashboardController extends AbstractDashboardController
 {
     public function __construct(
         private ProductRepository $productRepository,
-        private UserRepository $userRepository
+        private UserRepository $userRepository,
+        private AdminUrlGenerator $adminUrlGenerator
     ) {}
 
     public function index(): Response
@@ -27,11 +29,28 @@ class DashboardController extends AbstractDashboardController
         $totalUsers     = count($this->userRepository->findAll());
         $latestProducts = $this->productRepository->findLatest(5);
 
-        return $this->renderWithContext('admin/dashboard.html.twig', [
+        $templateParameters = [
             'product_stats'   => $productStats,
             'total_users'     => $totalUsers,
             'latest_products' => $latestProducts,
-        ]);
+        ];
+
+        return parent::index();
+    }
+
+    public function configureResponseParameters(): \EasyCorp\Bundle\EasyAdminBundle\Collection\KeyValueStore
+    {
+        $productStats   = $this->productRepository->getStats();
+        $totalUsers     = count($this->userRepository->findAll());
+        $latestProducts = $this->productRepository->findLatest(5);
+
+        $params = parent::configureResponseParameters();
+        $params->set('templatePath', 'admin/dashboard.html.twig');
+        $params->set('product_stats',   $productStats);
+        $params->set('total_users',     $totalUsers);
+        $params->set('latest_products', $latestProducts);
+
+        return $params;
     }
 
     public function configureDashboard(): Dashboard
