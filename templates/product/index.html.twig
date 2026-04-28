@@ -31,6 +31,425 @@
 </script>
 {% endblock %}
 
+{% block stylesheets %}
+<style>
+/* ── Reveal animation ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity .5s ease, transform .5s ease;
+}
+.reveal.visible { opacity:1; transform:none; }
+
+/* ── Hero ── */
+.hero {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg,#0f0e17 0%,#1a1040 60%,#0d1b2a 100%);
+  padding: 5rem 0 4rem;
+  color: #fff;
+}
+.hero-glow {
+  position: absolute;
+  width: 600px; height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(124,58,237,.35) 0%, transparent 70%);
+  top: -150px; right: -100px;
+  pointer-events: none;
+}
+.hero-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  background: rgba(124,58,237,.18);
+  border: 1px solid rgba(124,58,237,.35);
+  color: #c4b5fd;
+  font-size: .75rem;
+  font-weight: 700;
+  font-family: 'DM Sans',sans-serif;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: .35rem .85rem;
+  border-radius: 999px;
+  margin-bottom: 1.25rem;
+}
+.hero-title {
+  font-family: 'Playfair Display',serif;
+  font-size: clamp(2rem,5vw,3.5rem);
+  font-weight: 900;
+  line-height: 1.12;
+  color: #fff;
+  margin-bottom: 1rem;
+}
+.hero-title .accent { color: #a78bfa; }
+.hero-sub {
+  font-family: 'DM Sans',sans-serif;
+  font-size: 1.05rem;
+  color: rgba(255,255,255,.7);
+  max-width: 520px;
+  line-height: 1.65;
+  margin-bottom: 1.75rem;
+}
+.hero-search {
+  display: flex;
+  background: rgba(255,255,255,.07);
+  border: 1.5px solid rgba(255,255,255,.15);
+  border-radius: 12px;
+  overflow: hidden;
+  max-width: 500px;
+  backdrop-filter: blur(8px);
+  transition: border-color .2s, box-shadow .2s;
+}
+.hero-search:focus-within {
+  border-color: rgba(167,139,250,.6);
+  box-shadow: 0 0 0 3px rgba(124,58,237,.15);
+}
+.hero-search input {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: .85rem 1.1rem;
+  color: #fff;
+  font-size: .9rem;
+  font-family: 'DM Sans',sans-serif;
+  outline: none;
+}
+.hero-search input::placeholder { color: rgba(255,255,255,.35); }
+.hero-search button {
+  padding: .85rem 1.4rem;
+  background: linear-gradient(135deg,#7c3aed,#4f46e5);
+  border: none;
+  color: #fff;
+  font-size: .85rem;
+  font-weight: 700;
+  font-family: 'DM Sans',sans-serif;
+  cursor: pointer;
+  transition: opacity .15s;
+  white-space: nowrap;
+}
+.hero-search button:hover { opacity: .88; }
+.trust-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin-top: 1.4rem;
+}
+.trust-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  font-size: .75rem;
+  font-family: 'DM Sans',sans-serif;
+  color: rgba(255,255,255,.65);
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1);
+  padding: .3rem .8rem;
+  border-radius: 999px;
+}
+.trust-pill i { color: #a78bfa; font-size: .7rem; }
+/* Float card hero */
+.hero-float-card {
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 18px;
+  padding: 1.5rem;
+  backdrop-filter: blur(12px);
+  animation: floatY 4s ease-in-out infinite;
+}
+@keyframes floatY {
+  0%,100% { transform: translateY(0); }
+  50%      { transform: translateY(-10px); }
+}
+.hfc-score { font-size: 3rem; font-weight: 900; font-family:'Playfair Display',serif; color:#a78bfa; line-height:1; }
+.hfc-label { font-size:.8rem; color:rgba(255,255,255,.6); font-family:'DM Sans',sans-serif; }
+.hfc-row   { display:flex; justify-content:space-between; font-size:.72rem; color:rgba(255,255,255,.5); font-family:'DM Sans',sans-serif; }
+.hfc-bar   { background:rgba(255,255,255,.08); border-radius:999px; height:5px; overflow:hidden; margin-top:.25rem; }
+.hfc-fill  { height:100%; background:linear-gradient(90deg,#7c3aed,#a78bfa); border-radius:999px; }
+
+/* ── Categories ── */
+.cats-section {
+  padding: 1.25rem 0;
+  border-bottom: 1px solid #f3f4f6;
+  background: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,.04);
+}
+.cat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .4rem .95rem;
+  border-radius: 999px;
+  font-size: .78rem;
+  font-weight: 600;
+  font-family: 'DM Sans',sans-serif;
+  background: #f3f4f6;
+  color: #374151;
+  text-decoration: none;
+  border: 1.5px solid transparent;
+  transition: all .18s;
+  white-space: nowrap;
+}
+.cat-chip:hover { background:#ede9fe; color:#4f46e5; }
+.cat-chip.active { background:#4f46e5; color:#fff; border-color:#4f46e5; }
+.cat-chip i { font-size:.65rem; }
+
+/* ── Featured ── */
+.featured-section { padding: 2.5rem 0 1rem; }
+.section-eyebrow {
+  display: inline-flex; align-items:center; gap:.4rem;
+  font-size:.72rem; font-weight:700; font-family:'DM Sans',sans-serif;
+  color:#7c3aed; text-transform:uppercase; letter-spacing:.08em;
+  margin-bottom:.5rem;
+}
+.section-title {
+  font-family:'Playfair Display',serif;
+  font-size:1.6rem; font-weight:900; color:#111827; margin-bottom:1.25rem;
+}
+.featured-card {
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  background:#fff;
+  border-radius:20px;
+  overflow:hidden;
+  text-decoration:none;
+  box-shadow: 0 4px 24px rgba(0,0,0,.08);
+  transition: transform .25s ease, box-shadow .25s ease;
+  border: 1px solid #f3f4f6;
+}
+.featured-card:hover { transform:translateY(-4px); box-shadow:0 12px 40px rgba(0,0,0,.13); }
+@media(max-width:768px){ .featured-card { grid-template-columns:1fr; } }
+.featured-img {
+  position:relative; overflow:hidden; min-height:280px;
+  background:#f8f8f8;
+}
+.featured-img img { width:100%; height:100%; object-fit:cover; transition:transform .4s ease; }
+.featured-card:hover .featured-img img { transform:scale(1.04); }
+.featured-img-placeholder {
+  width:100%; height:100%; min-height:280px;
+  display:flex; align-items:center; justify-content:center;
+  background:linear-gradient(135deg,#ede9fe,#ddd6fe);
+  color:#7c3aed; font-size:3rem;
+}
+.feat-badge {
+  position:absolute; top:1rem; left:1rem;
+  background:linear-gradient(135deg,#7c3aed,#4f46e5);
+  color:#fff; font-size:.7rem; font-weight:700;
+  font-family:'DM Sans',sans-serif; padding:.35rem .9rem;
+  border-radius:999px; letter-spacing:.04em;
+}
+.featured-body { padding:2rem 1.75rem; display:flex; flex-direction:column; justify-content:center; }
+.feat-cat {
+  font-size:.72rem; font-weight:700; color:#7c3aed;
+  font-family:'DM Sans',sans-serif; text-transform:uppercase;
+  letter-spacing:.06em; margin-bottom:.6rem;
+}
+.feat-title {
+  font-family:'Playfair Display',serif;
+  font-size:1.5rem; font-weight:900; color:#111827;
+  line-height:1.2; margin-bottom:.75rem;
+}
+.feat-verdict {
+  font-size:.875rem; color:#6b7280;
+  font-family:'DM Sans',sans-serif; line-height:1.65;
+  margin-bottom:1rem;
+}
+.feat-pros { display:flex; flex-direction:column; gap:.35rem; margin-bottom:1.25rem; }
+.feat-pro-item {
+  display:flex; align-items:center; gap:.5rem;
+  font-size:.8rem; color:#065f46;
+  font-family:'DM Sans',sans-serif;
+}
+.feat-pro-item::before { content:'✓'; font-weight:800; color:#10b981; }
+.feat-footer { display:flex; align-items:center; justify-content:space-between; margin-top:auto; }
+.feat-price { font-family:'DM Sans',sans-serif; color:#111827; font-weight:700; font-size:1.1rem; }
+.feat-price small { font-size:.7rem; color:#9ca3af; font-weight:400; display:block; }
+.feat-cta {
+  display:inline-flex; align-items:center; gap:.4rem;
+  background:#4f46e5; color:#fff;
+  font-size:.8rem; font-weight:700;
+  font-family:'DM Sans',sans-serif;
+  padding:.5rem 1.1rem; border-radius:8px;
+  transition: background .15s;
+}
+.feat-cta:hover { background:#3730a3; }
+
+/* ── Grid header ── */
+.grid-section { padding: 2rem 0 3rem; }
+.grid-header {
+  display:flex; justify-content:space-between; align-items:flex-end;
+  margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;
+}
+.filter-row { display:flex; gap:.5rem; flex-wrap:wrap; }
+.f-btn {
+  padding:.4rem .9rem;
+  border-radius:999px;
+  font-size:.78rem; font-weight:600;
+  font-family:'DM Sans',sans-serif;
+  background:#f3f4f6; color:#374151;
+  text-decoration:none; border:1.5px solid transparent;
+  transition:all .18s;
+}
+.f-btn:hover { background:#ede9fe; color:#4f46e5; }
+.f-btn.active { background:#4f46e5; color:#fff; }
+
+/* ── Product Card ── */
+.pcard {
+  display:flex; flex-direction:column;
+  background:#fff;
+  border-radius:16px;
+  overflow:hidden;
+  text-decoration:none;
+  border:1px solid #f3f4f6;
+  box-shadow:0 2px 12px rgba(0,0,0,.06);
+  transition: transform .22s ease, box-shadow .22s ease;
+  height:100%;
+}
+.pcard:hover { transform:translateY(-5px); box-shadow:0 10px 30px rgba(0,0,0,.12); }
+.pcard-img {
+  position:relative; overflow:hidden;
+  height:200px; background:#f8f8f8;
+}
+.pcard-img img { width:100%; height:100%; object-fit:cover; transition:transform .4s ease; }
+.pcard:hover .pcard-img img { transform:scale(1.05); }
+.pcard-img-ph {
+  width:100%; height:100%;
+  display:flex; align-items:center; justify-content:center;
+  background:linear-gradient(135deg,#f5f3ff,#ede9fe);
+  color:#c4b5fd; font-size:2rem;
+}
+.pcard-overlay {
+  position:absolute; inset:0;
+  background:linear-gradient(180deg,transparent 40%,rgba(79,70,229,.7) 100%);
+  display:flex; align-items:flex-end; justify-content:center;
+  padding-bottom:1rem;
+  opacity:0; transition:opacity .25s;
+}
+.pcard:hover .pcard-overlay { opacity:1; }
+.pcard-overlay-cta {
+  color:#fff; font-size:.78rem; font-weight:700;
+  font-family:'DM Sans',sans-serif; display:flex; align-items:center; gap:.3rem;
+}
+.pcard-new {
+  position:absolute; top:.75rem; left:.75rem;
+  background:#10b981; color:#fff;
+  font-size:.65rem; font-weight:700;
+  font-family:'DM Sans',sans-serif;
+  padding:.2rem .6rem; border-radius:999px;
+  text-transform:uppercase; letter-spacing:.05em;
+}
+.pcard-body { padding:1rem 1.1rem; flex:1; }
+.pcard-cat {
+  display:inline-block;
+  background:#ede9fe; color:#6d28d9;
+  font-size:.68rem; font-weight:700;
+  font-family:'DM Sans',sans-serif;
+  padding:.2em .65em; border-radius:999px;
+  text-transform:uppercase; letter-spacing:.05em;
+  margin-bottom:.5rem;
+}
+.pcard-name {
+  font-family:'Playfair Display',serif;
+  font-size:1rem; font-weight:700; color:#111827;
+  line-height:1.3; margin-bottom:.5rem;
+}
+.pcard-verdict {
+  font-size:.8rem; color:#6b7280;
+  font-family:'DM Sans',sans-serif;
+  line-height:1.55; margin-bottom:.65rem;
+}
+.pcard-pros { display:flex; flex-direction:column; gap:.25rem; }
+.pcard-pro {
+  display:flex; align-items:center; gap:.4rem;
+  font-size:.75rem; color:#065f46;
+  font-family:'DM Sans',sans-serif;
+}
+.pcard-pro::before { content:'✓'; color:#10b981; font-weight:800; }
+.pcard-foot {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:.75rem 1.1rem;
+  border-top:1px solid #f3f4f6;
+  background:#fafafa;
+}
+.pcard-price {
+  font-family:'DM Sans',sans-serif;
+  font-weight:700; color:#111827; font-size:.95rem;
+}
+.pcard-price small { font-size:.65rem; color:#9ca3af; font-weight:400; display:block; }
+.pcard-arrow {
+  width:30px; height:30px;
+  background:#4f46e5; color:#fff;
+  border-radius:50%; display:flex;
+  align-items:center; justify-content:center;
+  font-size:.75rem;
+  transition:background .15s, transform .15s;
+}
+.pcard:hover .pcard-arrow { background:#3730a3; transform:scale(1.1); }
+
+/* ── Empty state ── */
+.empty-state {
+  text-align:center;
+  padding:4rem 1rem;
+  color:#9ca3af;
+}
+.empty-state-icon {
+  width:72px; height:72px;
+  background:#f3f4f6; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:2rem; color:#d1d5db;
+  margin:0 auto 1.25rem;
+}
+.empty-state h2 {
+  font-family:'Playfair Display',serif;
+  font-size:1.3rem; color:#374151; margin-bottom:.5rem;
+}
+.empty-state p {
+  font-family:'DM Sans',sans-serif;
+  font-size:.875rem; max-width:36ch; margin:0 auto;
+}
+
+/* ── How section ── */
+.how-section {
+  background:linear-gradient(135deg,#faf5ff,#f0f4ff);
+  padding:4rem 0;
+  margin-top:3rem;
+}
+.how-step {
+  text-align:center;
+  padding:1.5rem 1rem;
+}
+.how-num {
+  width:48px; height:48px;
+  background:linear-gradient(135deg,#7c3aed,#4f46e5);
+  color:#fff;
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.1rem; font-weight:900;
+  font-family:'DM Sans',sans-serif;
+  margin:0 auto 1rem;
+  box-shadow:0 4px 14px rgba(79,70,229,.3);
+}
+.how-step h3 {
+  font-family:'Playfair Display',serif;
+  font-size:1rem; font-weight:700; color:#111827; margin-bottom:.4rem;
+}
+.how-step p {
+  font-family:'DM Sans',sans-serif;
+  font-size:.825rem; color:#6b7280; line-height:1.6;
+}
+</style>
+{% endblock %}
+
 {% block body %}
 
 {# ── Hero ── #}
@@ -55,27 +474,27 @@
                     {% if products is not empty %}
                     <div class="trust-pill">
                         <i class="fas fa-star"></i>
-                        <strong style="color:var(--accent)">{{ products|length }}</strong>&nbsp;{{ 'hero.trust_count'|trans({'%count%': products|length}) }}
+                        <strong style="color:#a78bfa">{{ products|length }}</strong>&nbsp;{{ 'hero.trust_count'|trans({'%count%': products|length}) }}
                     </div>
                     {% endif %}
                 </div>
             </div>
-            <div class="col-lg-5 d-none d-lg-block hero-visual">
+            <div class="col-lg-5 d-none d-lg-block">
                 <div class="hero-float-card">
-                    <div style="font-family:var(--ff-ui);font-size:.7rem;color:#6b7280;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;">{{ 'hero.card_label'|trans }}</div>
+                    <div style="font-family:'DM Sans',sans-serif;font-size:.7rem;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;">{{ 'hero.card_label'|trans }}</div>
                     <div class="hfc-score">9.2</div>
                     <div class="hfc-label" style="margin-bottom:.75rem;">{{ 'hero.card_verdict'|trans }}</div>
                     <div class="hfc-bar-wrap">
-                        <div class="hfc-row"><span>Qualidade</span><span style="color:#fff">9.4</span></div>
+                        <div class="hfc-row"><span>Qualidade</span><span style="color:#e2e8f0">9.4</span></div>
                         <div class="hfc-bar"><div class="hfc-fill" style="width:94%"></div></div>
-                        <div class="hfc-row" style="margin-top:.3rem"><span>Custo-benefício</span><span style="color:#fff">9.0</span></div>
+                        <div class="hfc-row" style="margin-top:.4rem"><span>Custo-benefício</span><span style="color:#e2e8f0">9.0</span></div>
                         <div class="hfc-bar"><div class="hfc-fill" style="width:90%"></div></div>
-                        <div class="hfc-row" style="margin-top:.3rem"><span>Durabilidade</span><span style="color:#fff">8.8</span></div>
+                        <div class="hfc-row" style="margin-top:.4rem"><span>Durabilidade</span><span style="color:#e2e8f0">8.8</span></div>
                         <div class="hfc-bar"><div class="hfc-fill" style="width:88%"></div></div>
                     </div>
-                    <div style="margin-top:1rem;padding-top:.75rem;border-top:1px solid rgba(255,255,255,.07);display:flex;justify-content:space-between;font-family:var(--ff-ui);font-size:.75rem;color:#555;">
+                    <div style="margin-top:1rem;padding-top:.75rem;border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;font-family:'DM Sans',sans-serif;font-size:.75rem;color:#9ca3af;">
                         <span>✅ Recomendado pela IA</span>
-                        <span style="color:var(--green)">R$ 299,90</span>
+                        <span style="color:#34d399">R$ 299,90</span>
                     </div>
                 </div>
             </div>
@@ -83,25 +502,17 @@
     </div>
 </section>
 
-{# ── Categorias ──
-   CORRIGIDO: chips agora usam as categorias reais do banco de dados
-   passadas pelo controller (variável `categories`), com link funcional
-   para a rota product_category. O "Todas" sempre aparece primeiro.
-#}
+{# ── Categories ── #}
 <section class="cats-section" aria-label="{{ 'categories.label'|trans }}">
     <div class="container">
         <div class="d-flex gap-2 flex-wrap align-items-center">
-            <span style="font-family:var(--ff-ui);font-size:.8rem;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin-right:.25rem;">
+            <span style="font-family:'DM Sans',sans-serif;font-size:.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;margin-right:.25rem;white-space:nowrap;">
                 {{ 'categories.label'|trans }}
             </span>
-
-            {# "Todas" sempre presente e sempre linkado ao index sem filtro #}
             <a class="cat-chip {{ app.request.attributes.get('_route') == 'product_index' and not app.request.query.get('category') ? 'active' : '' }}"
                href="{{ path('product_index') }}">
                 <i class="fas fa-th"></i> {{ 'categories.all'|trans }}
             </a>
-
-            {# CORRIGIDO: categorias dinâmicas vindas do banco, não hardcoded #}
             {% for cat in categories %}
             <a class="cat-chip {{ app.request.query.get('category') == cat ? 'active' : '' }}"
                href="{{ path('product_category', {category: cat}) }}">
@@ -114,22 +525,21 @@
 
 <div class="container">
     {% if products is empty %}
-    <div class="empty-state reveal">
+    <div class="empty-state reveal" style="margin-top:3rem">
         <div class="empty-state-icon"><i class="fas fa-box-open"></i></div>
         <h2>{{ 'empty.title'|trans }}</h2>
         <p>{{ 'empty.desc'|trans }}</p>
     </div>
     {% else %}
 
-    {# ── Destaque (primeiro produto) ── #}
+    {# ── Destaque ── #}
     {% set featured = products|first %}
     <section class="featured-section reveal" aria-labelledby="featured-title">
-        <div class="section-eyebrow"><i class="fas fa-star"></i> {{ 'featured.eyebrow'|trans }}</div>
+        <div class="section-eyebrow"><i class="fas fa-fire"></i> {{ 'featured.eyebrow'|trans }}</div>
         <h2 id="featured-title" class="section-title">{{ 'featured.title'|trans }}</h2>
         <a href="{{ path('product_show', {slug: featured.slug}) }}" class="featured-card">
             <div class="featured-img">
                 {% if featured.imageUrl %}
-                    {# CORRIGIDO: destaque usa loading="eager" para não prejudicar o LCP #}
                     <img src="{{ featured.imageUrl }}" alt="Review de {{ featured.name }}" loading="eager">
                 {% else %}
                     <div class="featured-img-placeholder"><i class="fas fa-box"></i></div>
@@ -139,7 +549,7 @@
             <div class="featured-body">
                 {% if featured.category %}<div class="feat-cat"><i class="fas fa-tag me-1"></i>{{ featured.category }}</div>{% endif %}
                 <h3 class="feat-title">{{ featured.name }}</h3>
-                <p class="feat-verdict">{{ featured.aiVerdict|striptags }}</p>
+                <p class="feat-verdict">{{ featured.aiVerdict|striptags|slice(0,130) }}{% if featured.aiVerdict|length > 130 %}…{% endif %}</p>
                 {% if featured.pros|length %}
                 <div class="feat-pros">
                     {% for pro in featured.pros|slice(0, 3) %}
@@ -149,52 +559,40 @@
                 {% endif %}
                 <div class="feat-footer">
                     <div class="feat-price"><small>{{ 'featured.from'|trans }}</small> R$ {{ featured.currentPrice|number_format(2, ',', '.') }}</div>
-                    <span class="feat-cta"><i class="fas fa-book-open"></i>{{ 'featured.read'|trans }}</span>
+                    <span class="feat-cta"><i class="fas fa-book-open"></i> {{ 'featured.read'|trans }}</span>
                 </div>
             </div>
         </a>
     </section>
 
-    {# ── Grid de produtos ── #}
+    {# ── Grid ── #}
     <section class="grid-section" aria-labelledby="grid-title">
         <div class="grid-header">
             <div>
-                <div class="section-eyebrow" style="margin-bottom:.25rem;"><i class="fas fa-th-large"></i> {{ 'grid.eyebrow'|trans }}</div>
-                <h2 id="grid-title" style="font-family:var(--ff-h);font-size:1.4rem;font-weight:900;color:#111827;margin:0;">
+                <div class="section-eyebrow"><i class="fas fa-th-large"></i> {{ 'grid.eyebrow'|trans }}</div>
+                <h2 id="grid-title" style="font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:900;color:#111827;margin:0;">
                     {{ products|length == 1
                         ? 'grid.count_one'|trans({'%count%': products|length})
                         : 'grid.count_many'|trans({'%count%': products|length}) }}
                 </h2>
             </div>
-
-            {# CORRIGIDO: botões de ordenação agora são links reais que passam
-               o parâmetro order_by para o controller via GET.
-               O nome do campo segue o padrão do Symfony Form (product_filter_type[order_by]).
-            #}
-            <div class="filter-row" role="toolbar" aria-label="{{ 'grid.eyebrow'|trans }}">
+            <div class="filter-row" role="toolbar">
                 {% set currentOrder = app.request.query.all('product_filter_type')['order_by'] ?? '' %}
                 <a href="{{ path('product_index', {'product_filter_type[order_by]': 'createdAt'}) }}"
-                   class="f-btn {{ currentOrder == 'createdAt' or currentOrder == '' ? 'active' : '' }}">
-                    {{ 'grid.sort_new'|trans }}
-                </a>
+                   class="f-btn {{ currentOrder == 'createdAt' or currentOrder == '' ? 'active' : '' }}">{{ 'grid.sort_new'|trans }}</a>
                 <a href="{{ path('product_index', {'product_filter_type[order_by]': 'score_desc'}) }}"
-                   class="f-btn {{ currentOrder == 'score_desc' ? 'active' : '' }}">
-                    {{ 'grid.sort_score'|trans }}
-                </a>
+                   class="f-btn {{ currentOrder == 'score_desc' ? 'active' : '' }}">{{ 'grid.sort_score'|trans }}</a>
                 <a href="{{ path('product_index', {'product_filter_type[order_by]': 'currentPrice_asc'}) }}"
-                   class="f-btn {{ currentOrder == 'currentPrice_asc' ? 'active' : '' }}">
-                    {{ 'grid.sort_price'|trans }}
-                </a>
+                   class="f-btn {{ currentOrder == 'currentPrice_asc' ? 'active' : '' }}">{{ 'grid.sort_price'|trans }}</a>
             </div>
         </div>
 
-        <div class="row g-4" role="list" aria-label="{{ 'grid.eyebrow'|trans }}">
+        <div class="row g-4" role="list">
             {% for product in products %}
             <div class="col-xl-3 col-lg-4 col-md-6 reveal" role="listitem">
                 <a href="{{ url('product_show', {slug: product.slug}) }}" class="pcard" aria-label="{{ product.name }}">
                     <div class="pcard-img">
                         {% if product.imageUrl %}
-                            {# CORRIGIDO: loading="lazy" em todos exceto o destaque (já tratado acima) #}
                             <img src="{{ product.imageUrl }}" alt="Review de {{ product.name }}" loading="lazy">
                         {% else %}
                             <div class="pcard-img-ph"><i class="fas fa-box"></i></div>
@@ -207,9 +605,7 @@
                     <div class="pcard-body">
                         {% if product.category %}<span class="pcard-cat">{{ product.category }}</span>{% endif %}
                         <h2 class="pcard-name">{{ product.name }}</h2>
-                        <p class="pcard-verdict">
-                            {{ product.aiVerdict|striptags|slice(0, 110) }}{% if product.aiVerdict|length > 110 %}…{% endif %}
-                        </p>
+                        <p class="pcard-verdict">{{ product.aiVerdict|striptags|slice(0, 110) }}{% if product.aiVerdict|length > 110 %}…{% endif %}</p>
                         {% if product.pros|length %}
                         <div class="pcard-pros">
                             {% for pro in product.pros|slice(0, 2) %}
@@ -236,12 +632,28 @@
         <div class="section-eyebrow"><i class="fas fa-robot"></i> {{ 'how.eyebrow'|trans }}</div>
         <h2 id="how-title" class="section-title">{{ 'how.title'|trans }}</h2>
         <div class="row g-4 mt-0">
-            <div class="col-md-3 col-6"><div class="how-step"><div class="how-num">1</div><h3>{{ 'how.step1_title'|trans }}</h3><p>{{ 'how.step1_desc'|trans }}</p></div></div>
-            <div class="col-md-3 col-6"><div class="how-step"><div class="how-num">2</div><h3>{{ 'how.step2_title'|trans }}</h3><p>{{ 'how.step2_desc'|trans }}</p></div></div>
-            <div class="col-md-3 col-6"><div class="how-step"><div class="how-num">3</div><h3>{{ 'how.step3_title'|trans }}</h3><p>{{ 'how.step3_desc'|trans }}</p></div></div>
-            <div class="col-md-3 col-6"><div class="how-step"><div class="how-num">4</div><h3>{{ 'how.step4_title'|trans }}</h3><p>{{ 'how.step4_desc'|trans }}</p></div></div>
+            <div class="col-md-3 col-6 reveal"><div class="how-step"><div class="how-num">1</div><h3>{{ 'how.step1_title'|trans }}</h3><p>{{ 'how.step1_desc'|trans }}</p></div></div>
+            <div class="col-md-3 col-6 reveal"><div class="how-step"><div class="how-num">2</div><h3>{{ 'how.step2_title'|trans }}</h3><p>{{ 'how.step2_desc'|trans }}</p></div></div>
+            <div class="col-md-3 col-6 reveal"><div class="how-step"><div class="how-num">3</div><h3>{{ 'how.step3_title'|trans }}</h3><p>{{ 'how.step3_desc'|trans }}</p></div></div>
+            <div class="col-md-3 col-6 reveal"><div class="how-step"><div class="how-num">4</div><h3>{{ 'how.step4_title'|trans }}</h3><p>{{ 'how.step4_desc'|trans }}</p></div></div>
         </div>
     </div>
 </section>
 
+{% endblock %}
+
+{% block javascripts %}
+<script>
+(function(){
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if(e.isIntersecting){
+        e.target.classList.add('visible');
+        obs.unobserve(e.target);
+      }
+    });
+  }, {threshold: 0.12});
+  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+})();
+</script>
 {% endblock %}
