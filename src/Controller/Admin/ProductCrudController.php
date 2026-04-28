@@ -56,11 +56,10 @@ class ProductCrudController extends AbstractCrudController
 
     public function configureFields(string $pageName): iterable
     {
-        // ── Somente na listagem ──────────────────────────────────────────────
+        // ── Somente na listagem ─────────────────────────────────────────────
         yield IdField::new('id', 'ID')
             ->onlyOnIndex();
 
-        // Preview de imagem na listagem
         yield TextField::new('imageUrl', 'Imagem')
             ->onlyOnIndex()
             ->formatValue(function ($value) {
@@ -74,7 +73,7 @@ class ProductCrudController extends AbstractCrudController
             })
             ->renderAsHtml();
 
-        // ── Em todas as páginas ──────────────────────────────────────────────
+        // ── Em todas as páginas ─────────────────────────────────────────────
         yield TextField::new('name', 'Nome do Produto');
 
         yield TextField::new('category', 'Categoria');
@@ -91,32 +90,33 @@ class ProductCrudController extends AbstractCrudController
             ->setHelp('Nota gerada pela IA de 0.0 a 10.0')
             ->setFormTypeOption('attr', ['step' => '0.1', 'min' => '0', 'max' => '10']);
 
-        // ── Somente nos formulários (new / edit) ─────────────────────────────
+        // ── Somente nos formulários (new / edit) ────────────────────────────
         yield SlugField::new('slug', 'Slug (URL)')
             ->setTargetFieldName('name')
             ->hideOnIndex()
-            ->setHelp('Gerado automaticamente a partir do nome. Edite somente se necessário.');
+            ->setHelp('Gerado automaticamente a partir do nome.');
 
         yield UrlField::new('affiliateLink', 'Link Afiliado')
             ->hideOnIndex()
-            ->setHelp('URL completa do produto (link de afiliado ou direto do ML)');
+            ->setHelp('URL completa do produto no Mercado Livre (obrigatório para gerar conteúdo com IA).');
 
         yield TextField::new('imageUrl', 'URL da Imagem')
             ->hideOnIndex()
-            ->setHelp('Cole a URL direta da imagem do produto (JPG, PNG, WebP). Ex: https://...');
+            ->setHelp('URL da imagem do produto. Preenchida automaticamente pela IA.');
 
         yield TextField::new('mercadolivreId', 'ID Mercado Livre')
             ->hideOnIndex()
-            ->setHelp('Ex: MLB1234567890 — usado para atualização automática de preços.');
+            ->setHelp('Ex: MLB1234567890 — preenchido automaticamente pela IA.');
 
         yield TextField::new('youtubeVideoId', 'ID do Vídeo YouTube')
             ->hideOnIndex()
             ->setHelp('Apenas o ID do vídeo. Ex: dQw4w9WgXcQ');
 
+        // ── Seção IA — painel com botão (somente no edit) ───────────────────
         yield TextareaField::new('aiVerdict', 'Veredito IA')
             ->hideOnIndex()
             ->setNumOfRows(3)
-            ->setHelp('Resumo gerado pela IA sobre o produto.');
+            ->setHelp('Resumo objetivo gerado pela IA. Use o botão acima para gerar.');
 
         yield CollectionField::new('pros', 'Prós')
             ->hideOnIndex()
@@ -124,7 +124,7 @@ class ProductCrudController extends AbstractCrudController
             ->allowDelete()
             ->setEntryType(TextType::class)
             ->setEntryIsComplex(false)
-            ->setHelp('Adicione os pontos positivos do produto.');
+            ->setHelp('Pontos positivos gerados pela IA.');
 
         yield CollectionField::new('cons', 'Contras')
             ->hideOnIndex()
@@ -132,14 +132,14 @@ class ProductCrudController extends AbstractCrudController
             ->allowDelete()
             ->setEntryType(TextType::class)
             ->setEntryIsComplex(false)
-            ->setHelp('Adicione os pontos negativos do produto.');
+            ->setHelp('Pontos negativos gerados pela IA.');
 
         yield TextEditorField::new('fullReviewMarkdown', 'Review Completo (Markdown)')
             ->hideOnIndex()
             ->setNumOfRows(15)
-            ->setHelp('Conteúdo completo do review em Markdown. Mínimo recomendado: 300 palavras.');
+            ->setHelp('Review completo em Markdown gerado pela IA. Mínimo recomendado: 300 palavras.');
 
-        // ── Somente leitura (detalhes / listagem) ────────────────────────────
+        // ── Somente leitura ─────────────────────────────────────────────────
         yield DateTimeField::new('createdAt', 'Criado em')
             ->hideOnForm()
             ->setFormat('dd/MM/yyyy HH:mm');
@@ -173,7 +173,6 @@ class ProductCrudController extends AbstractCrudController
     public function generateFromUrl(Request $request): Response
     {
         if ($request->isMethod('POST')) {
-            // Valida CSRF token
             if (!$this->isCsrfTokenValid('ea-generate-from-url', $request->request->get('_token'))) {
                 $this->addFlash('danger', 'Token de segurança inválido. Tente novamente.');
 

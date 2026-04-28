@@ -1,0 +1,188 @@
+{#
+  Painel de geração de conteúdo IA para a tela de edição/criação de produtos.
+  Variáveis esperadas no contexto EasyAdmin:
+    - entity.instance : objeto Product (disponível automaticamente no edit)
+#}
+{% set product = entity.instance ?? null %}
+{% set product_id = product ? product.id : null %}
+
+<div id="ai-panel" class="card border-0 shadow-sm mb-4" style="border-left: 3px solid #0d6efd !important;">
+    <div class="card-header bg-white d-flex align-items-center justify-content-between">
+        <span class="fw-semibold">
+            <i class="fa fa-wand-magic-sparkles me-2 text-primary"></i>
+            Gerador de Conteúdo IA
+        </span>
+        {% if product_id %}
+            <button
+                type="button"
+                id="btn-generate-ai"
+                class="btn btn-primary btn-sm"
+                data-product-id="{{ product_id }}"
+                data-csrf-token="{{ csrf_token('admin_ai_generate') }}"
+            >
+                <i class="fa fa-rotate me-1" id="ai-icon"></i>
+                Gerar com IA
+            </button>
+        {% else %}
+            <span class="badge bg-secondary">Salve o produto primeiro para usar a IA</span>
+        {% endif %}
+    </div>
+
+    <div class="card-body pb-2">
+        {# Alerta de status #}
+        <div id="ai-alert" class="d-none mb-3"></div>
+
+        {% if product_id %}
+            <p class="text-muted small mb-0">
+                Clique em <strong>Gerar com IA</strong> para preencher automaticamente
+                <strong>Veredito</strong>, <strong>Prós</strong>, <strong>Contras</strong>,
+                <strong>Review</strong> e <strong>Nota</strong> usando os dados do produto no Mercado Livre.
+                O conteúdo gerado é salvo e também preenchido nos campos abaixo.
+            </p>
+        {% else %}
+            <p class="text-muted small mb-0">
+                Preencha o <strong>Nome</strong> e o <strong>Link Afiliado</strong>,
+                salve o produto e depois use este painel para gerar o conteúdo com IA.
+            </p>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+(function () {
+    const btn = document.getElementById('btn-generate-ai');
+    if (!btn) return;
+
+    btn.addEventListener('click', async function () {
+        const productId  = btn.dataset.productId;
+        const csrfToken  = btn.dataset.csrfToken;
+        const icon       = document.getElementById('ai-icon');
+        const alertBox   = document.getElementById('ai-alert');
+
+        // Estado de loading
+        btn.disabled = true;
+        icon.className = 'fa fa-spinner fa-spin me-1';
+        btn.innerHTML = '<i class="fa fa-spinner fa-spin me-1"></i> Gerando...';
+        alertBox.className = 'd-none mb-3';
+
+        try {
+            const res = await fetch('/admin/ai/generate', {
+                method:  'POST',
+                headers: {
+                    'Content-Type':  'application/json',
+                    'X-CSRF-Token':  csrfToken,
+                },
+                body: JSON.stringify({ productId: parseInt(productId) }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok || data.error) {
+                showAlert('danger', '\u26A0\uFE0F ' + (data.error || 'Erro desconhecido.'));
+                return;
+            }
+
+            // Preenche os campos do EasyAdmin no DOM
+            fillField('Product_aiVerdict', data.aiVerdict);
+            fillField('Product_fullReviewMarkdown', data.fullReviewMarkdown);
+            fillField('Product_score', data.score);
+
+            // Preenche coleções pros/cons
+            fillCollection('pros',  data.pros  || []);
+            fillCollection('cons',  data.cons   || []);
+
+            // Campos extras do ML se vieram
+            if (data.imageUrl)       fillField('Product_imageUrl',       data.imageUrl);
+            if (data.category)       fillField('Product_category',       data.category);
+            if (data.mercadolivreId) fillField('Product_mercadolivreId', data.mercadolivreId);
+
+            showAlert('success',
+                '\u2705 Conteúdo gerado e salvo com sucesso! '
+                + (data.score ? ' Nota: <strong>' + data.score + '/10</strong>' : '')
+                + ' — Revise os campos abaixo antes de salvar definitivamente.'
+            );
+
+        } catch (err) {
+            showAlert('danger', '\u26A0\uFE0F Falha na requisição: ' + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa fa-rotate me-1"></i> Gerar com IA';
+        }
+    });
+
+    // ── helpers ────────────────────────────────────────────────────────────
+
+    function fillField(fieldId, value) {
+        if (value === null || value === undefined) return;
+        const el = document.getElementById(fieldId);
+        if (!el) return;
+        el.value = value;
+        // Dispara evento change para que frameworks reativos percebam
+        el.dispatchEvent(new Event('input',  { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    function fillCollection(fieldName, items) {
+        // O EasyAdmin usa data-ea-collection-field-name para identificar collections
+        const wrapper = document.querySelector('[data-ea-collection-field-name="' + fieldName + '"]');
+        if (!wrapper) {
+            // Fallback: tenta achar pelo id do fieldset
+            fillCollectionFallback(fieldName, items);
+            return;
+        }
+
+        // Remove todos os itens atuais
+        wrapper.querySelectorAll('[data-ea-collection-item]').forEach(el => {
+            const deleteBtn = el.querySelector('[data-collection-delete-btn]')
+                           || el.querySelector('.field-collection-item-delete');
+            if (deleteBtn) deleteBtn.click();
+            else el.remove();
+        });
+
+        // Adiciona os novos itens
+        items.forEach(text => {
+            const addBtn = wrapper.querySelector('[data-ea-collection-add-button]')
+                        || wrapper.querySelector('.field-collection-add-button');
+            if (addBtn) {
+                addBtn.click();
+                setTimeout(() => {
+                    const inputs = wrapper.querySelectorAll('input[type="text"]');
+                    const last   = inputs[inputs.length - 1];
+                    if (last) { last.value = text; last.dispatchEvent(new Event('change', {bubbles:true})); }
+                }, 120);
+            }
+        });
+    }
+
+    function fillCollectionFallback(fieldName, items) {
+        // Tenta identificar pelo texto do label
+        const label = fieldName === 'pros' ? 'Prós' : 'Contras';
+        const fieldWrapper = Array.from(document.querySelectorAll('.field-collection-item, .form-group'))
+            .find(el => el.innerText && el.innerText.includes(label));
+        if (!fieldWrapper) return;
+
+        const addBtn = fieldWrapper.querySelector('button[data-ea-collection-add-button]')
+                    || fieldWrapper.closest('.ea-form-field-collectionfield')
+                                   ?.querySelector('.field-collection-add-button');
+        if (!addBtn) return;
+
+        items.forEach((text, i) => {
+            setTimeout(() => {
+                addBtn.click();
+                setTimeout(() => {
+                    const parent = addBtn.closest('.ea-fieldset') || addBtn.closest('fieldset') || addBtn.parentElement.parentElement;
+                    const inputs = parent.querySelectorAll('input[type="text"]');
+                    const last   = inputs[inputs.length - 1];
+                    if (last) { last.value = text; last.dispatchEvent(new Event('change', {bubbles:true})); }
+                }, 150);
+            }, i * 300);
+        });
+    }
+
+    function showAlert(type, html) {
+        const alertBox = document.getElementById('ai-alert');
+        alertBox.className = 'alert alert-' + type + ' mb-3';
+        alertBox.innerHTML = html;
+    }
+}());
+</script>
