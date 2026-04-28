@@ -14,14 +14,12 @@ use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\CollectionField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
-use EasyCorp\Bundle\EasyAdminBundle\Field\ImageField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\NumberField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\SlugField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextareaField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextEditorField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\UrlField;
-use EasyCorp\Bundle\EasyAdminBundle\Filter\ChoiceFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\NumericFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\TextFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
@@ -57,8 +55,7 @@ class ProductCrudController extends AbstractCrudController
 
     public function configureFields(string $pageName): iterable
     {
-        yield IdField::new('id')->hideOnForm();
-
+        yield IdField::new('id')->hideOnIndex();
         yield TextField::new('name', 'Nome');
 
         yield SlugField::new('slug')
@@ -73,6 +70,13 @@ class ProductCrudController extends AbstractCrudController
             ->setFormTypeOption('attr', ['step' => '0.01'])
             ->formatValue(fn($v) => 'R$ ' . number_format((float) $v, 2, ',', '.'));
 
+        // ── SCORE (bug #1 corrigido) ──────────────────────────────────────
+        yield NumberField::new('score', 'Nota IA (0–10)')
+            ->setNumDecimals(1)
+            ->setStoredAsString(true)
+            ->setHelp('Nota gerada pela IA, de 0.0 a 10.0')
+            ->setFormTypeOption('attr', ['step' => '0.1', 'min' => 0, 'max' => 10]);
+
         yield UrlField::new('affiliateLink', 'Link Afiliado')
             ->hideOnIndex();
 
@@ -84,9 +88,7 @@ class ProductCrudController extends AbstractCrudController
         yield TextField::new('imageUrl', 'Imagem')
             ->onlyOnIndex()
             ->formatValue(function ($value) {
-                if (!$value) {
-                    return '—';
-                }
+                if (!$value) return '—';
                 return sprintf(
                     '<img src="%s" style="height:50px;width:50px;object-fit:cover;border-radius:4px;" loading="lazy" alt="produto">',
                     htmlspecialchars($value, ENT_QUOTES)
@@ -138,7 +140,8 @@ class ProductCrudController extends AbstractCrudController
         return $filters
             ->add(TextFilter::new('name', 'Nome'))
             ->add(TextFilter::new('category', 'Categoria'))
-            ->add(NumericFilter::new('currentPrice', 'Preço'));
+            ->add(NumericFilter::new('currentPrice', 'Preço'))
+            ->add(NumericFilter::new('score', 'Nota IA'));
     }
 
     public function configureActions(Actions $actions): Actions
@@ -173,10 +176,12 @@ class ProductCrudController extends AbstractCrudController
                     $product->setPros($data['pros']);
                     $product->setCons($data['cons']);
                     $product->setFullReviewMarkdown($data['fullReviewMarkdown']);
-                    $product->setYoutubeVideoId($data['youtubeVideoId']);
+                    $product->setYoutubeVideoId($data['youtubeVideoId'] ?? null);
                     $product->setImageUrl($data['imageUrl'] ?? null);
                     $product->setMercadolivreId($data['mercadolivreId'] ?? null);
                     $product->setCategory($data['category'] ?? null);
+                    // ── SCORE (bug #2 corrigido) ──────────────────────────
+                    $product->setScore(isset($data['score']) ? (string) $data['score'] : null);
 
                     $this->entityManager->persist($product);
                     $this->entityManager->flush();

@@ -8,9 +8,7 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
 
-/**
- * @extends ServiceEntityRepository<Product>
- */
+/** @extends ServiceEntityRepository<Product> */
 class ProductRepository extends ServiceEntityRepository
 {
     private const DEFAULT_PER_PAGE = 12;
@@ -20,16 +18,6 @@ class ProductRepository extends ServiceEntityRepository
         parent::__construct($registry, Product::class);
     }
 
-    /**
-     * Busca produtos paginados com filtros e ordenação.
-     *
-     * @param array  $filters  ['category', 'min_price', 'max_price', 'search']
-     * @param int    $page     Página atual (começa em 1)
-     * @param int    $perPage  Itens por página
-     * @param string $orderBy  Campo de ordenação: 'createdAt', 'currentPrice', 'name'
-     * @param string $order    'ASC' ou 'DESC'
-     * @return array{items: Product[], total: int, pages: int, page: int, perPage: int}
-     */
     public function findPaginated(
         array $filters = [],
         int $page = 1,
@@ -57,10 +45,6 @@ class ProductRepository extends ServiceEntityRepository
         ];
     }
 
-    /**
-     * Busca todos os produtos filtrados (sem paginação).
-     * Mantido por compatibilidade com código existente.
-     */
     public function findFiltered(array $filters = [], string $orderBy = 'createdAt', string $order = 'DESC'): array
     {
         return $this->buildFilteredQuery($filters, $orderBy, $order)
@@ -68,24 +52,13 @@ class ProductRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    /**
-     * Conta o total de produtos que correspondem aos filtros.
-     */
     public function countFiltered(array $filters = []): int
     {
-        $qb = $this->createQueryBuilder('p')
-            ->select('COUNT(p.id)');
-
+        $qb = $this->createQueryBuilder('p')->select('COUNT(p.id)');
         $this->applyFilters($qb, $filters);
-
         return (int) $qb->getQuery()->getSingleScalarResult();
     }
 
-    /**
-     * Retorna categorias distintas que possuem produtos cadastrados.
-     *
-     * @return string[]
-     */
     public function findDistinctCategories(): array
     {
         $results = $this->createQueryBuilder('p')
@@ -100,11 +73,6 @@ class ProductRepository extends ServiceEntityRepository
         return array_filter($results);
     }
 
-    /**
-     * Busca produtos mais recentes (para widgets/sidebar).
-     *
-     * @return Product[]
-     */
     public function findLatest(int $limit = 5): array
     {
         return $this->createQueryBuilder('p')
@@ -114,11 +82,6 @@ class ProductRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    /**
-     * Busca produtos similares (mesma categoria, excluindo o atual).
-     *
-     * @return Product[]
-     */
     public function findRelated(Product $product, int $limit = 4): array
     {
         return $this->createQueryBuilder('p')
@@ -132,48 +95,47 @@ class ProductRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    /**
-     * Estatísticas gerais para o dashboard admin.
-     */
     public function getStats(): array
     {
-        $qb = $this->createQueryBuilder('p');
-
-        $total = (int) $qb->select('COUNT(p.id)')->getQuery()->getSingleScalarResult();
+        $total = (int) $this->createQueryBuilder('p')
+            ->select('COUNT(p.id)')
+            ->getQuery()->getSingleScalarResult();
 
         $avgPrice = (float) $this->createQueryBuilder('p')
             ->select('AVG(p.currentPrice)')
-            ->getQuery()
-            ->getSingleScalarResult();
+            ->getQuery()->getSingleScalarResult();
+
+        $avgScore = (float) $this->createQueryBuilder('p')
+            ->select('AVG(p.score)')
+            ->where('p.score IS NOT NULL')
+            ->getQuery()->getSingleScalarResult();
 
         $updatedToday = (int) $this->createQueryBuilder('p')
             ->select('COUNT(p.id)')
             ->where('p.lastUpdateAt >= :today')
             ->setParameter('today', new \DateTimeImmutable('today'))
-            ->getQuery()
-            ->getSingleScalarResult();
+            ->getQuery()->getSingleScalarResult();
 
         $categoriesCount = (int) $this->createQueryBuilder('p')
             ->select('COUNT(DISTINCT p.category)')
             ->where('p.category IS NOT NULL')
-            ->getQuery()
-            ->getSingleScalarResult();
+            ->getQuery()->getSingleScalarResult();
 
         return [
             'total'           => $total,
             'avgPrice'        => $avgPrice,
+            'avgScore'        => $avgScore,     // ← novo
             'updatedToday'    => $updatedToday,
             'categoriesCount' => $categoriesCount,
         ];
     }
 
-    // -------------------------------------------------------------------------
-    // Helpers privados
-    // -------------------------------------------------------------------------
+    // ── Helpers privados ──────────────────────────────────────────────────────
 
     private function buildFilteredQuery(array $filters, string $orderBy, string $order): \Doctrine\ORM\QueryBuilder
     {
-        $allowedOrderBy = ['createdAt', 'currentPrice', 'name', 'lastUpdateAt'];
+        // ── bug #4 corrigido: 'score' adicionado ao whitelist ─────────────
+        $allowedOrderBy = ['createdAt', 'currentPrice', 'name', 'lastUpdateAt', 'score'];
         $allowedOrder   = ['ASC', 'DESC'];
 
         if (!in_array($orderBy, $allowedOrderBy, true)) {

@@ -3,72 +3,73 @@
 
 namespace App\Service;
 
+use App\Service\MercadoLivreService;
+
 class ProductAIService
 {
-    private MercadoLivreScraperService $scraper;
-    private GeminiService $gemini;
-
-    public function __construct(MercadoLivreScraperService $scraper, GeminiService $gemini)
-    {
-        $this->scraper = $scraper;
-        $this->gemini  = $gemini;
-    }
+    public function __construct(
+        private MercadoLivreService $mercadoLivreService,
+        private GeminiService $geminiService
+    ) {}
 
     /**
-     * Gera um produto completo com review de IA a partir de um link do Mercado Livre.
-     *
-     * @throws \RuntimeException em caso de falha no scraping ou na IA
+     * A partir de um link afiliado do Mercado Livre, gera todos os dados
+     * do produto incluindo análise de IA com score.
      */
     public function generateFromAffiliateLink(string $url): array
     {
-        $productData = $this->scraper->extractFromUrl($url);
-        $reviewData  = $this->gemini->generateReview($productData);
+        // 1. Extrai ID do ML da URL
+        $mlId = $this->mercadoLivreService->extractIdFromUrl($url);
 
-        // Categoria: prefere a devolvida pela IA (mais legível), senão usa a do ML
-        $category = !empty($reviewData['category'])
-            ? $reviewData['category']
-            : $productData['category'];
+        if (!$mlId) {
+            throw new \InvalidArgumentException('URL inválida. Não foi possível extrair o ID do Mercado Livre.');
+        }
+
+        // 2. Busca dados do produto na API do ML
+        $mlData = $this->mercadoLivreService->getProductData($mlId);
+
+        // 3. Gera análise com IA
+        $aiData = $this->geminiService->analyzeProduct([
+            'name'        => $mlData['title']       ?? '',
+            'price'       => $mlData['price']        ?? 0,
+            'description' => $mlData['description']  ?? '',
+        ]);
+
+        // 4. Gera slug
+        $slug = $this->generateSlug($mlData['title'] ?? 'produto');
 
         return [
-            'name'                => $productData['name'],
-            'slug'                => $this->slugify($productData['name']),
-            'currentPrice'        => $productData['price'],
-            'affiliateLink'       => $productData['url'],
-            'aiVerdict'           => $reviewData['aiVerdict'],
-            'pros'                => array_values($reviewData['pros']),
-            'cons'                => array_values($reviewData['cons']),
-            'fullReviewMarkdown'  => $reviewData['fullReviewMarkdown'],
-            'youtubeVideoId'      => null,
-            'imageUrl'            => $productData['imageUrl'],
-            'mercadolivreId'      => $productData['mercadolivreId'],
-            'category'            => $category,
+            'name'               => $mlData['title']         ?? 'Produto sem nome',
+            'slug'               => $slug,
+            'currentPrice'       => (string) ($mlData['price'] ?? '0.00'),
+            'affiliateLink'      => $url,
+            'imageUrl'           => $mlData['thumbnail']     ?? null,
+            'mercadolivreId'     => $mlId,
+            'category'           => $mlData['category_name'] ?? null,
+            'youtubeVideoId'     => null,
+            // IA
+            'aiVerdict'          => $aiData['aiVerdict'],
+            'pros'               => $aiData['pros'],
+            'cons'               => $aiData['cons'],
+            'fullReviewMarkdown' => $aiData['fullReviewMarkdown'],
+            // ── bug #6 corrigido: score propagado ─────────────────────────
+            'score'              => $aiData['score'] ?? null,
         ];
     }
 
-    /**
-     * Converte uma string em slug URL-amigável.
-     */
-    public function slugify(string $text): string
+    private function generateSlug(string $text): string
     {
-        if (empty($text)) {
-            return 'produto';
-        }
-
-        // Converte para ASCII (transliteração)
-        $text = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $text) ?: $text;
-
-        // Remove caracteres não alfanuméricos (exceto hífens)
-        $text = preg_replace('/[^a-zA-Z0-9\-_\s]/', '', $text) ?? $text;
-
-        // Converte espaços e underscores para hífens
-        $text = preg_replace('/[\s_]+/', '-', $text) ?? $text;
-
-        // Remove hífens duplicados
-        $text = preg_replace('/-{2,}/', '-', $text) ?? $text;
-
-        // Remove hífens no início e fim
-        $text = trim($text, '-');
-
-        return strtolower($text) ?: 'produto';
+        $text = mb_strtolower($text, 'UTF-8');
+        $text = strtr($text, [
+            'á'=>'a','à'=>'a','ã'=>'a','â'=>'a','ä'=>'a',
+            'é'=>'e','è'=>'e','ê'=>'e','ë'=>'e',
+            'í'=>'i','ì'=>'i','î'=>'i','ï'=>'i',
+            'ó'=>'o','ò'=>'o','õ'=>'o','ô'=>'o','ö'=>'o',
+            'ú'=>'u','ù'=>'u','û'=>'u','ü'=>'u',
+            'ç'=>'c','ñ'=>'n',
+        ]);
+        $text = preg_replace('/[^a-z0-9\s-]/', '', $text);
+        $text = preg_replace('/[\s-]+/', '-', trim($text));
+        return substr($text, 0, 200);
     }
 }

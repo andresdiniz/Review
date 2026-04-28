@@ -4,161 +4,101 @@
 namespace App\Service;
 
 use Symfony\Contracts\HttpClient\HttpClientInterface;
-use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 
 class GeminiService
 {
-    private HttpClientInterface $httpClient;
-    private string $apiKey;
+    private const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
-    // Modelos disponíveis em ordem de preferência
-    private const MODEL = 'gemini-2.0-flash';
-    private const API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
-
-    public function __construct(HttpClientInterface $httpClient, string $apiKey)
-    {
-        $this->httpClient = $httpClient;
-        $this->apiKey     = $apiKey;
-    }
+    public function __construct(
+        private HttpClientInterface $httpClient,
+        private string $apiKey
+    ) {}
 
     /**
-     * Gera um review completo do produto usando IA.
-     *
-     * @param array $productData Dados do produto (name, description, category, condition, attributes, soldQuantity)
-     * @return array{fullReviewMarkdown: string, pros: list<string>, cons: list<string>, aiVerdict: string, category: string}
-     * @throws \RuntimeException em caso de falha na API
+     * Gera análise completa de um produto a partir dos seus dados.
+     * Retorna array com todos os campos incluindo score.
      */
-    public function generateReview(array $productData): array
+    public function analyzeProduct(array $productData): array
     {
-        $attributes = '';
-        if (!empty($productData['attributes'])) {
-            $attrs = [];
-            foreach ($productData['attributes'] as $key => $value) {
-                $attrs[] = "{$key}: {$value}";
-            }
-            $attributes = implode(', ', $attrs);
-        }
+        $prompt = $this->buildPrompt($productData);
 
-        $soldQuantity = $productData['soldQuantity'] ?? 0;
-        $soldInfo     = $soldQuantity > 0 ? "Vendidos: {$soldQuantity}" : '';
-
-        $prompt = <<<PROMPT
-Você é um especialista em reviews de produtos para um site brasileiro de curadoria. Analise o produto abaixo e gere uma review completa, honesta e útil para o consumidor.
-
-**Dados do Produto:**
-- Nome: {$productData['name']}
-- Categoria: {$productData['category']}
-- Condição: {$productData['condition']}
-- Descrição: {$productData['description']}
-- Atributos técnicos: {$attributes}
-- {$soldInfo}
-
-**Instruções:**
-1. Seja específico e mencione características reais do produto.
-2. Prós devem ser objetivos e verificáveis.
-3. Contras devem ser construtivos, não negativistas.
-4. O veredito final deve ser conciso (máximo 2 frases).
-5. O reviewMarkdown deve ter pelo menos 3 parágrafos com conteúdo rico.
-6. A category deve ser uma categoria legível em português (ex: "Eletrônicos", "Ferramentas Elétricas").
-
-Responda APENAS com o JSON abaixo, sem explicações, sem blocos de código markdown:
-{
-  "reviewMarkdown": "texto completo em markdown com ## subtítulos, parágrafos e negrito",
-  "pros": ["pró 1 específico", "pró 2 específico", "pró 3 específico"],
-  "cons": ["contra 1 construtivo", "contra 2 construtivo"],
-  "verdict": "veredito final conciso em 1-2 frases",
-  "category": "categoria do produto em português"
-}
-PROMPT;
-
-        $rawText = $this->callGeminiApi($prompt);
-        return $this->parseReviewResponse($rawText, $productData);
-    }
-
-    private function callGeminiApi(string $prompt, int $attempt = 1): string
-    {
-        $maxAttempts = 3;
-
-        try {
-            $url      = sprintf('%s/%s:generateContent?key=%s', self::API_BASE, self::MODEL, $this->apiKey);
-            $response = $this->httpClient->request('POST', $url, [
-                'json' => [
-                    'contents' => [
-                        [
-                            'parts' => [
-                                ['text' => $prompt],
-                            ],
-                        ],
-                    ],
-                    'generationConfig' => [
-                        'temperature'     => 0.7,
-                        'maxOutputTokens' => 3072,
-                        'responseMimeType' => 'application/json',
-                    ],
-                    'safetySettings' => [
-                        ['category' => 'HARM_CATEGORY_HARASSMENT', 'threshold' => 'BLOCK_NONE'],
-                        ['category' => 'HARM_CATEGORY_HATE_SPEECH', 'threshold' => 'BLOCK_NONE'],
-                    ],
+        $response = $this->httpClient->request('POST', self::API_URL . '?key=' . $this->apiKey, [
+            'json' => [
+                'contents' => [
+                    ['parts' => [['text' => $prompt]]]
                 ],
-            ]);
+                'generationConfig' => [
+                    'temperature'     => 0.7,
+                    'maxOutputTokens' => 2048,
+                ],
+            ],
+        ]);
 
-            $data      = $response->toArray();
-            $candidate = $data['candidates'][0] ?? null;
+        $data = $response->toArray();
+        $text = $data['candidates'][0]['content']['parts'][0]['text'] ?? '';
 
-            if (!$candidate) {
-                throw new \RuntimeException('Gemini não retornou candidatos na resposta.');
-            }
-
-            // Verifica se foi bloqueado por segurança
-            $finishReason = $candidate['finishReason'] ?? '';
-            if ($finishReason === 'SAFETY') {
-                throw new \RuntimeException('Resposta bloqueada pelos filtros de segurança do Gemini.');
-            }
-
-            return $candidate['content']['parts'][0]['text'] ?? '';
-        } catch (TransportExceptionInterface $e) {
-            if ($attempt < $maxAttempts) {
-                sleep($attempt * 2); // Backoff exponencial
-                return $this->callGeminiApi($prompt, $attempt + 1);
-            }
-            throw new \RuntimeException('Erro de conexão com Gemini após ' . $maxAttempts . ' tentativas: ' . $e->getMessage(), 0, $e);
-        }
+        return $this->parseResponse($text, $productData);
     }
 
-    private function parseReviewResponse(string $rawText, array $productData): array
+    private function buildPrompt(array $productData): string
     {
-        // Remove possíveis blocos de código markdown (```json ... ```)
-        $clean = preg_replace('/^```(?:json)?\s*/m', '', $rawText);
-        $clean = preg_replace('/```\s*$/m', '', $clean ?? $rawText);
-        $clean = trim($clean ?? $rawText);
+        $name  = $productData['name']  ?? 'Produto desconhecido';
+        $price = $productData['price'] ?? 0;
+        $desc  = $productData['description'] ?? '';
 
-        // Tenta decodificar JSON direto
-        $result = json_decode($clean, true);
+        return <<<PROMPT
+Você é um especialista em avaliação de produtos. Analise o produto abaixo e responda EXCLUSIVAMENTE em JSON válido, sem markdown, sem comentários.
 
-        // Tenta extrair JSON do texto se a decodificação falhar
-        if (!is_array($result)) {
-            if (preg_match('/\{.*\}/s', $clean, $matches)) {
-                $result = json_decode($matches[0], true);
-            }
-        }
+Produto: {$name}
+Preço: R$ {$price}
+Descrição: {$desc}
 
-        if (!is_array($result)) {
-            // Fallback: usa o texto bruto como review
+Retorne exatamente este JSON:
+{
+  "aiVerdict": "Veredito objetivo em 2-3 frases",
+  "pros": ["ponto positivo 1", "ponto positivo 2", "ponto positivo 3"],
+  "cons": ["ponto negativo 1", "ponto negativo 2"],
+  "fullReviewMarkdown": "## Review\\n\\nConteúdo completo em markdown...",
+  "score": 7.5
+}
+
+Regras:
+- score: número decimal de 0.0 a 10.0, representando a qualidade geral do produto
+- pros: lista de 3 a 5 pontos positivos reais
+- cons: lista de 2 a 4 pontos negativos reais
+- fullReviewMarkdown: mínimo 300 palavras em markdown
+- Responda SOMENTE o JSON, sem nenhum texto fora dele
+PROMPT;
+    }
+
+    private function parseResponse(string $text, array $productData): array
+    {
+        // Remove possíveis blocos de código markdown
+        $text = preg_replace('/```(?:json)?\s*([\s\S]*?)```/', '$1', $text);
+        $text = trim($text);
+
+        $parsed = json_decode($text, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($parsed)) {
+            // Fallback seguro
             return [
-                'fullReviewMarkdown' => $rawText,
-                'pros'               => [],
-                'cons'               => [],
-                'aiVerdict'          => '',
-                'category'           => $productData['category'] ?? '',
+                'aiVerdict'           => 'Análise gerada automaticamente.',
+                'pros'                => ['Produto disponível no Mercado Livre'],
+                'cons'                => ['Informações limitadas disponíveis'],
+                'fullReviewMarkdown'  => '## Review\n\nProduto analisado automaticamente.',
+                'score'               => null,
             ];
         }
 
         return [
-            'fullReviewMarkdown' => $result['reviewMarkdown'] ?? $rawText,
-            'pros'               => array_filter((array) ($result['pros'] ?? [])),
-            'cons'               => array_filter((array) ($result['cons'] ?? [])),
-            'aiVerdict'          => $result['verdict'] ?? '',
-            'category'           => $result['category'] ?? $productData['category'] ?? '',
+            'aiVerdict'          => (string) ($parsed['aiVerdict'] ?? ''),
+            'pros'               => (array)  ($parsed['pros']      ?? []),
+            'cons'               => (array)  ($parsed['cons']      ?? []),
+            'fullReviewMarkdown' => (string) ($parsed['fullReviewMarkdown'] ?? ''),
+            // ── bug #5 corrigido: score extraído e validado ────────────────
+            'score'              => isset($parsed['score'])
+                                    ? (string) max(0, min(10, (float) $parsed['score']))
+                                    : null,
         ];
     }
 }

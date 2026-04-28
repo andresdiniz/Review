@@ -23,8 +23,8 @@ class DashboardController extends AbstractDashboardController
 
     public function index(): Response
     {
-        $productStats  = $this->productRepository->getStats();
-        $totalUsers    = count($this->userRepository->findAll());
+        $productStats   = $this->productRepository->getStats();
+        $totalUsers     = count($this->userRepository->findAll());
         $latestProducts = $this->productRepository->findLatest(5);
 
         return $this->render('admin/dashboard.html.twig', [
@@ -45,7 +45,7 @@ class DashboardController extends AbstractDashboardController
     public function configureMenuItems(): iterable
     {
         yield MenuItem::linkToDashboard('Dashboard', 'fa fa-home');
-        yield MenuItem::linkTo(ProductCrudController::class, 'Produtos', 'fa fa-tag');
-        yield MenuItem::linkTo(UserCrudController::class, 'Usuários', 'fa fa-user');
+        yield MenuItem::linkToCrud('Produtos', 'fa fa-tag', Product::class);
+        yield MenuItem::linkToCrud('Usuários', 'fa fa-user', User::class);
     }
 }

@@ -4,6 +4,7 @@
 namespace App\Controller\Admin;
 
 use App\Entity\User;
+use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
@@ -23,14 +24,15 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 class UserCrudController extends AbstractCrudController
 {
     private const AVAILABLE_ROLES = [
-        'Usuário'        => 'ROLE_USER',
-        'Administrador'  => 'ROLE_ADMIN',
-        'Editor'         => 'ROLE_EDITOR',
+        'Usuário'       => 'ROLE_USER',
+        'Administrador' => 'ROLE_ADMIN',
+        'Editor'        => 'ROLE_EDITOR',
     ];
 
     public function __construct(
         private UserPasswordHasherInterface $passwordHasher,
-        private AdminUrlGenerator $adminUrlGenerator
+        private AdminUrlGenerator $adminUrlGenerator,
+        private EntityManagerInterface $entityManager   // ← bug #3 corrigido
     ) {}
 
     public static function getEntityFqcn(): string
@@ -60,7 +62,6 @@ class UserCrudController extends AbstractCrudController
         yield TextField::new('lastName', 'Sobrenome')
             ->hideOnIndex();
 
-        // Campo de senha: exibido apenas no formulário de criação e edição
         if (in_array($pageName, [Crud::PAGE_NEW, Crud::PAGE_EDIT], true)) {
             yield TextField::new('plainPassword', 'Senha')
                 ->setFormType(RepeatedType::class)
@@ -106,27 +107,18 @@ class UserCrudController extends AbstractCrudController
             ->add(Crud::PAGE_EDIT, $resetPassword);
     }
 
-    /**
-     * Intercepta persistência para hash da senha em novos usuários.
-     */
-    public function persistEntity(\Doctrine\ORM\EntityManagerInterface $entityManager, $entityInstance): void
+    public function persistEntity(EntityManagerInterface $entityManager, $entityInstance): void
     {
         $this->hashPasswordIfProvided($entityInstance);
         parent::persistEntity($entityManager, $entityInstance);
     }
 
-    /**
-     * Intercepta atualização para hash da senha se alterada.
-     */
-    public function updateEntity(\Doctrine\ORM\EntityManagerInterface $entityManager, $entityInstance): void
+    public function updateEntity(EntityManagerInterface $entityManager, $entityInstance): void
     {
         $this->hashPasswordIfProvided($entityInstance);
         parent::updateEntity($entityManager, $entityInstance);
     }
 
-    /**
-     * Ação para redefinir a senha de um usuário via formulário.
-     */
     public function resetPassword(AdminContext $context, Request $request): Response
     {
         /** @var User $user */
@@ -148,8 +140,8 @@ class UserCrudController extends AbstractCrudController
             $hashed      = $this->passwordHasher->hashPassword($user, $newPassword);
             $user->setPassword($hashed);
 
-            $em = $this->container->get('doctrine')->getManager();
-            $em->flush();
+            // ── bug #3 corrigido: usa EntityManager injetado ──────────────
+            $this->entityManager->flush();
 
             $this->addFlash('success', sprintf('Senha do usuário "%s" redefinida com sucesso.', $user->getEmail()));
 
@@ -169,10 +161,6 @@ class UserCrudController extends AbstractCrudController
 
     private function hashPasswordIfProvided(User $user): void
     {
-        // O campo plainPassword é 'mapped' => false; pegamos via getter se existir
-        // Na prática, o EasyAdmin não mapeia automaticamente — verificamos se a senha foi definida
-        // através do formulário com mapped=false e pegamos via request ou campo virtual
-        // Esta lógica funciona se o campo plainPassword for adicionado como virtual na entidade
         if (method_exists($user, 'getPlainPassword') && $user->getPlainPassword()) {
             $hashed = $this->passwordHasher->hashPassword($user, $user->getPlainPassword());
             $user->setPassword($hashed);

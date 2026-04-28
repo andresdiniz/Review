@@ -1,3 +1,130 @@
 {% extends '@EasyAdmin/page/content.html.twig' %}
 
-{% block page_title %}Bem-vindo ao Admin{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block main %}
+<div class="row g-4 mb-4">
+    {# Card: Total de produtos #}
+    <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-primary bg-opacity-10 p-3">
+                    <i class="fa fa-tag fa-2x text-primary"></i>
+                </div>
+                <div>
+                    <div class="fs-2 fw-bold">{{ product_stats.total }}</div>
+                    <div class="text-muted small">Produtos cadastrados</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Card: Usuários #}
+    <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-success bg-opacity-10 p-3">
+                    <i class="fa fa-users fa-2x text-success"></i>
+                </div>
+                <div>
+                    <div class="fs-2 fw-bold">{{ total_users }}</div>
+                    <div class="text-muted small">Usuários registrados</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Card: Preço médio #}
+    <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-warning bg-opacity-10 p-3">
+                    <i class="fa fa-dollar-sign fa-2x text-warning"></i>
+                </div>
+                <div>
+                    <div class="fs-2 fw-bold">R$ {{ product_stats.avgPrice|number_format(2, ',', '.') }}</div>
+                    <div class="text-muted small">Preço médio</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Card: Nota média IA #}
+    <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-info bg-opacity-10 p-3">
+                    <i class="fa fa-star fa-2x text-info"></i>
+                </div>
+                <div>
+                    <div class="fs-2 fw-bold">{{ product_stats.avgScore ? product_stats.avgScore|number_format(1, ',', '.') : '—' }}</div>
+                    <div class="text-muted small">Nota média IA (0–10)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Tabela de últimos produtos #}
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white fw-semibold">
+        <i class="fa fa-clock me-2 text-muted"></i> Últimos produtos adicionados
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Imagem</th>
+                    <th>Nome</th>
+                    <th>Categoria</th>
+                    <th>Preço</th>
+                    <th>Nota IA</th>
+                    <th>Criado em</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in latest_products %}
+                <tr>
+                    <td>
+                        {% if product.imageUrl %}
+                            <img src="{{ product.imageUrl }}" alt="{{ product.name }}"
+                                 style="height:48px;width:48px;object-fit:cover;border-radius:6px;">
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="fw-semibold">{{ product.name }}</td>
+                    <td>
+                        {% if product.category %}
+                            <span class="badge bg-secondary">{{ product.category }}</span>
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>R$ {{ product.currentPrice|number_format(2, ',', '.') }}</td>
+                    <td>
+                        {% if product.score %}
+                            <span class="badge {% if product.score >= 7 %}bg-success{% elseif product.score >= 5 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                                {{ product.score|number_format(1, ',', '.') }}
+                            </span>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-muted small">{{ product.createdAt|date('d/m/Y H:i') }}</td>
+                    <td>
+                        <a href="{{ ea_url().setController('App\\Controller\\Admin\\ProductCrudController').setAction('edit').setEntityId(product.id) }}"
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="fa fa-edit"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-4">Nenhum produto cadastrado ainda.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
