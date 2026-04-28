@@ -27,7 +27,7 @@ class DashboardController extends AbstractDashboardController
         $totalUsers     = count($this->userRepository->findAll());
         $latestProducts = $this->productRepository->findLatest(5);
 
-        return $this->render('admin/dashboard.html.twig', [
+        return $this->renderWithContext('admin/dashboard.html.twig', [
             'product_stats'   => $productStats,
             'total_users'     => $totalUsers,
             'latest_products' => $latestProducts,
@@ -47,7 +47,7 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::linkToDashboard('Dashboard', 'fa fa-home');
         yield MenuItem::linkToCrud('Produtos', 'fa fa-tag', Product::class)
             ->setController(ProductCrudController::class);
-        yield MenuItem::linkToCrud('Usu\u00e1rios', 'fa fa-user', User::class)
+        yield MenuItem::linkToCrud('Usuários', 'fa fa-user', User::class)
             ->setController(UserCrudController::class);
     }
 }
