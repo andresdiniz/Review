@@ -3,128 +3,350 @@
 {% block page_title %}Dashboard{% endblock %}
 
 {% block main %}
-<div class="row g-4 mb-4">
-    {# Card: Total de produtos #}
-    <div class="col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body d-flex align-items-center gap-3">
-                <div class="rounded-circle bg-primary bg-opacity-10 p-3">
-                    <i class="fa fa-tag fa-2x text-primary"></i>
-                </div>
-                <div>
-                    <div class="fs-2 fw-bold">{{ product_stats.total }}</div>
-                    <div class="text-muted small">Produtos cadastrados</div>
-                </div>
-            </div>
-        </div>
+
+<style>
+  /* ── Reset & base ── */
+  .dash-wrap { font-family: 'Inter', sans-serif; }
+
+  /* ── KPI Cards ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 1.75rem;
+  }
+  .kpi-card {
+    border-radius: 16px;
+    padding: 1.4rem 1.5rem;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,.12);
+    transition: transform .2s ease, box-shadow .2s ease;
+  }
+  .kpi-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 30px rgba(0,0,0,.18);
+  }
+  .kpi-card::after {
+    content: '';
+    position: absolute;
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.08);
+    right: -30px; bottom: -30px;
+  }
+  .kpi-card .kpi-icon {
+    font-size: 1.6rem;
+    margin-bottom: .6rem;
+    opacity: .9;
+  }
+  .kpi-card .kpi-value {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -.02em;
+  }
+  .kpi-card .kpi-label {
+    font-size: .8rem;
+    margin-top: .3rem;
+    opacity: .85;
+    font-weight: 500;
+  }
+  .kpi-blue    { background: linear-gradient(135deg, #4f46e5, #7c3aed); }
+  .kpi-green   { background: linear-gradient(135deg, #059669, #10b981); }
+  .kpi-amber   { background: linear-gradient(135deg, #d97706, #f59e0b); }
+  .kpi-sky     { background: linear-gradient(135deg, #0284c7, #38bdf8); }
+
+  /* ── Section header ── */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+  .section-title {
+    font-size: .95rem;
+    font-weight: 700;
+    color: #374151;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+  }
+  .section-title i { color: #6b7280; }
+
+  /* ── Table card ── */
+  .dash-table-card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 2px 16px rgba(0,0,0,.07);
+    overflow: hidden;
+  }
+  .dash-table-card .card-head {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .dash-table-card .card-head span {
+    font-weight: 700;
+    font-size: .95rem;
+    color: #111827;
+  }
+  .dash-table-wrap { overflow-x: auto; }
+  .dash-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .dash-table thead th {
+    padding: .75rem 1rem;
+    font-size: .72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: #9ca3af;
+    background: #fafafa;
+    border-bottom: 1px solid #f3f4f6;
+    white-space: nowrap;
+  }
+  .dash-table tbody tr {
+    transition: background .15s;
+  }
+  .dash-table tbody tr:hover { background: #f9fafb; }
+  .dash-table tbody td {
+    padding: .9rem 1rem;
+    font-size: .875rem;
+    color: #374151;
+    border-bottom: 1px solid #f3f4f6;
+    vertical-align: middle;
+  }
+  .dash-table tbody tr:last-child td { border-bottom: none; }
+
+  .prod-img {
+    width: 44px; height: 44px;
+    object-fit: cover;
+    border-radius: 10px;
+    box-shadow: 0 1px 6px rgba(0,0,0,.1);
+  }
+  .prod-img-placeholder {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    background: #f3f4f6;
+    display: flex; align-items: center; justify-content: center;
+    color: #d1d5db;
+    font-size: 1.1rem;
+  }
+  .prod-name { font-weight: 600; color: #111827; }
+
+  .badge-cat {
+    display: inline-block;
+    padding: .25em .7em;
+    border-radius: 999px;
+    font-size: .72rem;
+    font-weight: 600;
+    background: #ede9fe;
+    color: #6d28d9;
+  }
+  .score-badge {
+    display: inline-block;
+    padding: .28em .75em;
+    border-radius: 999px;
+    font-size: .78rem;
+    font-weight: 700;
+  }
+  .score-high   { background: #d1fae5; color: #065f46; }
+  .score-mid    { background: #fef3c7; color: #92400e; }
+  .score-low    { background: #fee2e2; color: #991b1b; }
+  .score-none   { color: #9ca3af; }
+
+  .btn-edit {
+    display: inline-flex; align-items: center; gap: .3rem;
+    padding: .35rem .75rem;
+    border-radius: 8px;
+    font-size: .78rem;
+    font-weight: 600;
+    color: #4f46e5;
+    background: #ede9fe;
+    border: none;
+    text-decoration: none;
+    transition: background .15s, color .15s;
+  }
+  .btn-edit:hover { background: #4f46e5; color: #fff; }
+
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #9ca3af;
+  }
+  .empty-state i { font-size: 2.5rem; margin-bottom: .75rem; display: block; }
+
+  /* ── Responsive ── */
+  @media (max-width: 576px) {
+    .kpi-value { font-size: 1.6rem; }
+    .dash-table thead th,
+    .dash-table tbody td { padding: .65rem .75rem; }
+    .prod-img, .prod-img-placeholder { width: 36px; height: 36px; }
+  }
+</style>
+
+<div class="dash-wrap">
+
+  {# ── KPI Cards ── #}
+  <div class="kpi-grid">
+
+    <div class="kpi-card kpi-blue">
+      <div class="kpi-icon"><i class="fa fa-tag"></i></div>
+      <div class="kpi-value" data-count="{{ product_stats.total }}">0</div>
+      <div class="kpi-label">Produtos cadastrados</div>
     </div>
 
-    {# Card: Usuários #}
-    <div class="col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body d-flex align-items-center gap-3">
-                <div class="rounded-circle bg-success bg-opacity-10 p-3">
-                    <i class="fa fa-users fa-2x text-success"></i>
-                </div>
-                <div>
-                    <div class="fs-2 fw-bold">{{ total_users }}</div>
-                    <div class="text-muted small">Usuários registrados</div>
-                </div>
-            </div>
-        </div>
+    <div class="kpi-card kpi-green">
+      <div class="kpi-icon"><i class="fa fa-users"></i></div>
+      <div class="kpi-value" data-count="{{ total_users }}">0</div>
+      <div class="kpi-label">Usuários registrados</div>
     </div>
 
-    {# Card: Preço médio #}
-    <div class="col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body d-flex align-items-center gap-3">
-                <div class="rounded-circle bg-warning bg-opacity-10 p-3">
-                    <i class="fa fa-dollar-sign fa-2x text-warning"></i>
-                </div>
-                <div>
-                    <div class="fs-2 fw-bold">R$ {{ product_stats.avgPrice|number_format(2, ',', '.') }}</div>
-                    <div class="text-muted small">Preço médio</div>
-                </div>
-            </div>
-        </div>
+    <div class="kpi-card kpi-amber">
+      <div class="kpi-icon"><i class="fa fa-dollar-sign"></i></div>
+      <div class="kpi-value"
+           data-count="{{ product_stats.avgPrice }}"
+           data-prefix="R$&nbsp;"
+           data-decimals="2">0</div>
+      <div class="kpi-label">Preço médio</div>
     </div>
 
-    {# Card: Nota média IA #}
-    <div class="col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body d-flex align-items-center gap-3">
-                <div class="rounded-circle bg-info bg-opacity-10 p-3">
-                    <i class="fa fa-star fa-2x text-info"></i>
-                </div>
-                <div>
-                    <div class="fs-2 fw-bold">{{ product_stats.avgScore ? product_stats.avgScore|number_format(1, ',', '.') : '—' }}</div>
-                    <div class="text-muted small">Nota média IA (0–10)</div>
-                </div>
-            </div>
-        </div>
+    <div class="kpi-card kpi-sky">
+      <div class="kpi-icon"><i class="fa fa-star"></i></div>
+      <div class="kpi-value"
+           data-count="{{ product_stats.avgScore ?: 0 }}"
+           data-decimals="1"
+           data-suffix="/10">0</div>
+      <div class="kpi-label">Nota média IA</div>
     </div>
+
+  </div>
+
+  {# ── Últimos produtos ── #}
+  <div class="dash-table-card">
+    <div class="card-head">
+      <span><i class="fa fa-clock me-2" style="color:#6b7280"></i>Últimos produtos adicionados</span>
+      <span style="font-size:.75rem;color:#9ca3af;font-weight:500">{{ latest_products|length }} registros</span>
+    </div>
+    <div class="dash-table-wrap">
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th>Imagem</th>
+            <th>Nome</th>
+            <th>Categoria</th>
+            <th>Preço</th>
+            <th>Nota IA</th>
+            <th>Criado em</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for product in latest_products %}
+          <tr>
+            <td>
+              {% if product.imageUrl %}
+                <img src="{{ product.imageUrl }}" alt="{{ product.name }}" class="prod-img">
+              {% else %}
+                <div class="prod-img-placeholder"><i class="fa fa-image"></i></div>
+              {% endif %}
+            </td>
+            <td><span class="prod-name">{{ product.name }}</span></td>
+            <td>
+              {% if product.category %}
+                <span class="badge-cat">{{ product.category }}</span>
+              {% else %}
+                <span style="color:#d1d5db">—</span>
+              {% endif %}
+            </td>
+            <td style="font-weight:600">R$ {{ product.currentPrice|number_format(2, ',', '.') }}</td>
+            <td>
+              {% if product.score %}
+                <span class="score-badge {% if product.score >= 7 %}score-high{% elseif product.score >= 5 %}score-mid{% else %}score-low{% endif %}">
+                  {{ product.score|number_format(1, ',', '.') }}
+                </span>
+              {% else %}
+                <span class="score-none">—</span>
+              {% endif %}
+            </td>
+            <td style="color:#6b7280;font-size:.8rem;white-space:nowrap">
+              {{ product.createdAt|date('d/m/Y H:i') }}
+            </td>
+            <td>
+              <a href="{{ ea_url().setController('App\\Controller\\Admin\\ProductCrudController').setAction('edit').setEntityId(product.id) }}"
+                 class="btn-edit">
+                <i class="fa fa-edit"></i> Editar
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7">
+              <div class="empty-state">
+                <i class="fa fa-box-open"></i>
+                Nenhum produto cadastrado ainda.
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
 </div>
 
-{# Tabela de últimos produtos #}
-<div class="card border-0 shadow-sm">
-    <div class="card-header bg-white fw-semibold">
-        <i class="fa fa-clock me-2 text-muted"></i> Últimos produtos adicionados
-    </div>
-    <div class="table-responsive">
-        <table class="table table-hover mb-0 align-middle">
-            <thead class="table-light">
-                <tr>
-                    <th>Imagem</th>
-                    <th>Nome</th>
-                    <th>Categoria</th>
-                    <th>Preço</th>
-                    <th>Nota IA</th>
-                    <th>Criado em</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for product in latest_products %}
-                <tr>
-                    <td>
-                        {% if product.imageUrl %}
-                            <img src="{{ product.imageUrl }}" alt="{{ product.name }}"
-                                 style="height:48px;width:48px;object-fit:cover;border-radius:6px;">
-                        {% else %}
-                            <span class="text-muted">—</span>
-                        {% endif %}
-                    </td>
-                    <td class="fw-semibold">{{ product.name }}</td>
-                    <td>
-                        {% if product.category %}
-                            <span class="badge bg-secondary">{{ product.category }}</span>
-                        {% else %}—{% endif %}
-                    </td>
-                    <td>R$ {{ product.currentPrice|number_format(2, ',', '.') }}</td>
-                    <td>
-                        {% if product.score %}
-                            <span class="badge {% if product.score >= 7 %}bg-success{% elseif product.score >= 5 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
-                                {{ product.score|number_format(1, ',', '.') }}
-                            </span>
-                        {% else %}
-                            <span class="text-muted">—</span>
-                        {% endif %}
-                    </td>
-                    <td class="text-muted small">{{ product.createdAt|date('d/m/Y H:i') }}</td>
-                    <td>
-                        <a href="{{ ea_url().setController('App\\Controller\\Admin\\ProductCrudController').setAction('edit').setEntityId(product.id) }}"
-                           class="btn btn-sm btn-outline-primary">
-                            <i class="fa fa-edit"></i>
-                        </a>
-                    </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="7" class="text-center text-muted py-4">Nenhum produto cadastrado ainda.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
+<script>
+(function () {
+  function animateCount(el) {
+    const target   = parseFloat(el.dataset.count) || 0;
+    const decimals = parseInt(el.dataset.decimals) || 0;
+    const prefix   = el.dataset.prefix  || '';
+    const suffix   = el.dataset.suffix  || '';
+    const duration = 900;
+    const start    = performance.now();
+
+    function fmt(v) {
+      return decimals
+        ? v.toFixed(decimals).replace('.', ',')
+        : Math.floor(v).toString();
+    }
+
+    function step(now) {
+      const progress = Math.min((now - start) / duration, 1);
+      const ease     = 1 - Math.pow(1 - progress, 3);
+      el.innerHTML   = prefix + fmt(ease * target) + suffix;
+      if (progress < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        animateCount(e.target);
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.3 });
+
+  document.querySelectorAll('[data-count]').forEach(el => observer.observe(el));
+
+  // Fade-in rows
+  document.querySelectorAll('.dash-table tbody tr').forEach((row, i) => {
+    row.style.opacity = '0';
+    row.style.transform = 'translateY(10px)';
+    row.style.transition = 'opacity .3s ease, transform .3s ease';
+    setTimeout(() => {
+      row.style.opacity = '1';
+      row.style.transform = 'translateY(0)';
+    }, 80 + i * 60);
+  });
+})();
+</script>
 {% endblock %}
