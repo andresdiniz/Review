@@ -7,13 +7,13 @@ use App\Entity\Product;
 use App\Entity\User;
 use App\Repository\ProductRepository;
 use App\Repository\UserRepository;
-use EasyCorp\Bundle\EasyAdminBundle\Attribute\Dashboard;  // atributo principal
-use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard as DashboardConfig;  // classe de configuração
+use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
 use Symfony\Component\HttpFoundation\Response;
 
-#[Dashboard]  // ← apenas isso, sem routePath
+#[AdminDashboard(routePath: '/admin', routeName: 'admin')]
 class DashboardController extends AbstractDashboardController
 {
     public function __construct(
@@ -21,7 +21,6 @@ class DashboardController extends AbstractDashboardController
         private UserRepository $userRepository
     ) {}
 
-    // NÃO use #[Route] aqui
     public function index(): Response
     {
         $productStats   = $this->productRepository->getStats();
@@ -35,12 +34,10 @@ class DashboardController extends AbstractDashboardController
         ]);
     }
 
-    public function configureDashboard(): DashboardConfig
+    public function configureDashboard(): Dashboard
     {
-        $logo = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" ...>...</svg>';
-
-        return DashboardConfig::new()
-            ->setTitle($logo . 'Reviews')
+        return Dashboard::new()
+            ->setTitle('<img src="/img/logo.png" alt="Logo" style="height:30px"> Reviews')
             ->setFaviconPath('favicon.ico')
             ->setLocales(['pt_BR']);
     }
@@ -48,7 +45,9 @@ class DashboardController extends AbstractDashboardController
     public function configureMenuItems(): iterable
     {
         yield MenuItem::linkToDashboard('Dashboard', 'fa fa-home');
-        yield MenuItem::linkToCrud('Produtos', 'fa fa-tag', Product::class);
-        yield MenuItem::linkToCrud('Usuários', 'fa fa-user', User::class);
+        yield MenuItem::linkToCrud('Produtos', 'fa fa-tag', Product::class)
+            ->setController(ProductCrudController::class);
+        yield MenuItem::linkToCrud('Usu\u00e1rios', 'fa fa-user', User::class)
+            ->setController(UserCrudController::class);
     }
 }
