@@ -13,12 +13,6 @@
 {% block tw_image %}<meta name="twitter:image" content="{{ product.imageUrl ?? '' }}">{% endblock %}
 
 {% block structured_data %}
-{#
-  CORRIGIDO:
-  1. priceValidUntil adicionado (evita que o Google marque o preço como "expirado")
-  2. reviewRating adicionado ao Review (gera as estrelas nos resultados de busca)
-  3. FAQPage adicionado como terceiro item do array JSON-LD
-#}
 <script type="application/ld+json">
 [
   {
@@ -42,7 +36,7 @@
       "priceCurrency": "BRL",
       "availability": "https://schema.org/InStock",
       "url": "{{ product.affiliateLink }}",
-      "priceValidUntil": "{{ "now"|modify("+30 days")|date("Y-m-d") }}"
+      "priceValidUntil": "{{ "now"|date_modify("+30 days")|date("Y-m-d") }}"
     },
     "review": {
       "@type": "Review",
@@ -110,8 +104,6 @@
                     <span style="color:#30363d;">·</span>
                     {% endif %}
                     <span class="hero-tag-pill"><i class="fas fa-robot me-1"></i>{{ 'product.review_with_ai'|trans }}</span>
-                    {# CORRIGIDO: product.updatedAt agora usa o método getUpdatedAt()
-                       adicionado à entidade (retorna lastUpdateAt ?? createdAt) #}
                     <span class="hero-tag-pill">
                         <i class="fas fa-calendar-alt me-1"></i>{{ product.updatedAt ? product.updatedAt|date('d/m/Y') : 'now'|date('d/m/Y') }}
                     </span>
@@ -119,7 +111,6 @@
 
                 <h1 class="product-headline">{{ product.name }}</h1>
 
-                {# CORRIGIDO: product.score agora existe na entidade (campo DECIMAL 4,1) #}
                 {% if product.score %}
                 {% set circ = 2 * 3.14159 * 36 %}
                 {% set dash = circ - (circ * product.score / 10) %}
@@ -230,7 +221,6 @@
                             <span class="qvb-v">{{ product.score >= 7 ? 'product.recommended'|trans : 'product.evaluate'|trans }}</span>
                         </div>
                         {% endif %}
-                        {# CORRIGIDO: product.updatedAt usa o alias getUpdatedAt() da entidade #}
                         <div class="qvb-row">
                             <span class="qvb-k">{{ 'product.updated_at'|trans }}</span>
                             <span class="qvb-v">{{ product.updatedAt ? product.updatedAt|date('d/m/Y') : 'now'|date('d/m/Y') }}</span>
@@ -287,10 +277,7 @@
                     <div class="review-article">{{ product.fullReviewMarkdown|markdown_to_html }}</div>
                 </section>
 
-                {# ── FAQ ──
-                   CORRIGIDO: microdados itemscope/itemprop adicionados em cada item
-                   para que o Google processe o schema FAQPage corretamente.
-                #}
+                {# FAQ #}
                 <section id="faq" class="faq-wrap reveal" itemscope itemtype="https://schema.org/FAQPage">
                     <h2 class="faq-wrap-title">{{ 'product.faq_title'|trans({'%name%': product.name}) }}</h2>
                     {% set faqs = [
@@ -333,7 +320,6 @@
                                 <meta itemprop="availability" content="https://schema.org/InStock">
                                 <span class="currency">R$</span>{{ product.currentPrice|number_format(2,',','.') }}
                             </div>
-                            {# CORRIGIDO: exibe a data real de atualização (getUpdatedAt) #}
                             <div class="buy-price-note">
                                 <i class="fas fa-sync-alt"></i>
                                 Verificado em: {{ product.updatedAt ? product.updatedAt|date('d/m/Y') : 'now'|date('d/m/Y') }}
@@ -350,8 +336,6 @@
                         </div>
                     </div>
 
-                    {# Score gauge #}
-                    {# CORRIGIDO: usa product.score (campo agora existente na entidade) #}
                     {% if product.score %}
                     {% set circG = 125.66 %}
                     <div class="buy-box" style="padding:1.25rem;">
@@ -387,7 +371,6 @@
                         <div class="trust-item"><i class="fas fa-lock"></i> {{ 'trust.secure'|trans }}</div>
                     </div>
 
-                    {# Produtos relacionados (sidebar) #}
                     {% if related is defined and related|length %}
                     <div class="related-box buy-box" style="padding:1.25rem;">
                         <div class="buy-price-label" style="margin-bottom:.75rem;">Produtos similares</div>
