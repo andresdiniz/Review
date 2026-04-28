@@ -1,6 +1,4 @@
-{% extends '@EasyAdmin/page/content.html.twig' %}
-
-{% block page_title %}Dashboard{% endblock %}
+{% extends '@EasyAdmin/layout.html.twig' %}
 
 {% block main %}
 
@@ -181,7 +179,6 @@
   }
   .empty-state i { font-size: 2.5rem; margin-bottom: .75rem; display: block; }
 
-  /* ── Responsive ── */
   @media (max-width: 576px) {
     .kpi-value { font-size: 1.6rem; }
     .dash-table thead th,
@@ -337,7 +334,6 @@
 
   document.querySelectorAll('[data-count]').forEach(el => observer.observe(el));
 
-  // Fade-in rows
   document.querySelectorAll('.dash-table tbody tr').forEach((row, i) => {
     row.style.opacity = '0';
     row.style.transform = 'translateY(10px)';
