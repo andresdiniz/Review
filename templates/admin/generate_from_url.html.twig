@@ -23,6 +23,9 @@
                 </div>
 
                 <form method="post" action="{{ action }}">
+                    {# CSRF token obrigatório — sem ele o Symfony rejeita o POST silenciosamente #}
+                    <input type="hidden" name="_token" value="{{ csrf_token('ea-generate-from-url') }}">
+
                     <div class="mb-4">
                         <label for="affiliate_url" class="form-label fw-semibold">
                             URL do produto no Mercado Livre
@@ -37,7 +40,7 @@
                             autofocus
                         >
                         <div class="form-text text-muted">
-                            Exemplo: <code>https://www.mercadolivre.com.br/produto/MLB1234567890</code>
+                            Exemplo: <code>https://produto.mercadolivre.com.br/MLB-1234567890-titulo-do-produto</code>
                         </div>
                     </div>
 
@@ -61,7 +64,7 @@
                 <h6 class="fw-semibold mb-2"><i class="fa fa-lightbulb me-2 text-warning"></i>Como funciona</h6>
                 <ol class="mb-0 ps-3 text-muted small">
                     <li>Cole a URL do produto no Mercado Livre</li>
-                    <li>O sistema busca título, preço e imagem via API</li>
+                    <li>O sistema busca título, preço e imagem via API pública do ML</li>
                     <li>A IA Gemini gera veredito, prós, contras, review e <strong>nota (score)</strong></li>
                     <li>O produto é salvo e você pode editar antes de publicar</li>
                 </ol>
