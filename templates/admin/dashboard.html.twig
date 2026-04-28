@@ -1,15 +1,24 @@
-{% extends '@EasyAdmin/layout.html.twig' %}
+{#
+  Estende @EasyAdmin/page/content.html.twig (NAO layout.html.twig diretamente).
+
+  Por que content.html.twig?
+  - layout.html.twig chama ea() na linha 3 para montar i18n/contexto.
+  - Se o controller chamar $this->render() diretamente, o AdminContext
+    nao e inicializado e ea() retorna null -> erro "i18n on null".
+  - content.html.twig ja estende layout, e o contexto e inicializado
+    pelo parent::index() no controller antes de renderizar.
+  - Referencia: https://symfony.com/bundles/EasyAdminBundle/current/dashboards.html
+#}
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block content_title %}Dashboard{% endblock %}
 
 {% block main %}
 
 <style>
-  /* ── Reset & base ── */
-  .dash-wrap { font-family: 'Inter', sans-serif; }
-
-  /* ── KPI Cards ── */
   .kpi-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
     gap: 1.25rem;
     margin-bottom: 1.75rem;
   }
@@ -34,51 +43,25 @@
     background: rgba(255,255,255,.08);
     right: -30px; bottom: -30px;
   }
-  .kpi-card .kpi-icon {
-    font-size: 1.6rem;
-    margin-bottom: .6rem;
-    opacity: .9;
-  }
+  .kpi-card .kpi-icon { font-size: 1.6rem; margin-bottom: .6rem; opacity: .9; }
   .kpi-card .kpi-value {
     font-size: 2rem;
     font-weight: 700;
     line-height: 1;
     letter-spacing: -.02em;
   }
-  .kpi-card .kpi-label {
-    font-size: .8rem;
-    margin-top: .3rem;
-    opacity: .85;
-    font-weight: 500;
-  }
-  .kpi-blue    { background: linear-gradient(135deg, #4f46e5, #7c3aed); }
-  .kpi-green   { background: linear-gradient(135deg, #059669, #10b981); }
-  .kpi-amber   { background: linear-gradient(135deg, #d97706, #f59e0b); }
-  .kpi-sky     { background: linear-gradient(135deg, #0284c7, #38bdf8); }
+  .kpi-card .kpi-label { font-size: .8rem; margin-top: .3rem; opacity: .85; font-weight: 500; }
+  .kpi-blue  { background: linear-gradient(135deg, #4f46e5, #7c3aed); }
+  .kpi-green { background: linear-gradient(135deg, #059669, #10b981); }
+  .kpi-amber { background: linear-gradient(135deg, #d97706, #f59e0b); }
+  .kpi-sky   { background: linear-gradient(135deg, #0284c7, #38bdf8); }
 
-  /* ── Section header ── */
-  .section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1rem;
-  }
-  .section-title {
-    font-size: .95rem;
-    font-weight: 700;
-    color: #374151;
-    display: flex;
-    align-items: center;
-    gap: .5rem;
-  }
-  .section-title i { color: #6b7280; }
-
-  /* ── Table card ── */
   .dash-table-card {
     background: #fff;
     border-radius: 16px;
     box-shadow: 0 2px 16px rgba(0,0,0,.07);
     overflow: hidden;
+    margin-top: 1.5rem;
   }
   .dash-table-card .card-head {
     padding: 1rem 1.5rem;
@@ -87,16 +70,9 @@
     align-items: center;
     justify-content: space-between;
   }
-  .dash-table-card .card-head span {
-    font-weight: 700;
-    font-size: .95rem;
-    color: #111827;
-  }
+  .dash-table-card .card-head span { font-weight: 700; font-size: .95rem; color: #111827; }
   .dash-table-wrap { overflow-x: auto; }
-  .dash-table {
-    width: 100%;
-    border-collapse: collapse;
-  }
+  .dash-table { width: 100%; border-collapse: collapse; }
   .dash-table thead th {
     padding: .75rem 1rem;
     font-size: .72rem;
@@ -108,9 +84,7 @@
     border-bottom: 1px solid #f3f4f6;
     white-space: nowrap;
   }
-  .dash-table tbody tr {
-    transition: background .15s;
-  }
+  .dash-table tbody tr { transition: background .15s; }
   .dash-table tbody tr:hover { background: #f9fafb; }
   .dash-table tbody td {
     padding: .9rem 1rem;
@@ -120,7 +94,6 @@
     vertical-align: middle;
   }
   .dash-table tbody tr:last-child td { border-bottom: none; }
-
   .prod-img {
     width: 44px; height: 44px;
     object-fit: cover;
@@ -132,11 +105,9 @@
     border-radius: 10px;
     background: #f3f4f6;
     display: flex; align-items: center; justify-content: center;
-    color: #d1d5db;
-    font-size: 1.1rem;
+    color: #d1d5db; font-size: 1.1rem;
   }
   .prod-name { font-weight: 600; color: #111827; }
-
   .badge-cat {
     display: inline-block;
     padding: .25em .7em;
@@ -146,18 +117,11 @@
     background: #ede9fe;
     color: #6d28d9;
   }
-  .score-badge {
-    display: inline-block;
-    padding: .28em .75em;
-    border-radius: 999px;
-    font-size: .78rem;
-    font-weight: 700;
-  }
-  .score-high   { background: #d1fae5; color: #065f46; }
-  .score-mid    { background: #fef3c7; color: #92400e; }
-  .score-low    { background: #fee2e2; color: #991b1b; }
-  .score-none   { color: #9ca3af; }
-
+  .score-badge { display: inline-block; padding: .28em .75em; border-radius: 999px; font-size: .78rem; font-weight: 700; }
+  .score-high { background: #d1fae5; color: #065f46; }
+  .score-mid  { background: #fef3c7; color: #92400e; }
+  .score-low  { background: #fee2e2; color: #991b1b; }
+  .score-none { color: #9ca3af; }
   .btn-edit {
     display: inline-flex; align-items: center; gap: .3rem;
     padding: .35rem .75rem;
@@ -171,131 +135,112 @@
     transition: background .15s, color .15s;
   }
   .btn-edit:hover { background: #4f46e5; color: #fff; }
-
-  .empty-state {
-    text-align: center;
-    padding: 3rem 1rem;
-    color: #9ca3af;
-  }
+  .empty-state { text-align: center; padding: 3rem 1rem; color: #9ca3af; }
   .empty-state i { font-size: 2.5rem; margin-bottom: .75rem; display: block; }
-
   @media (max-width: 576px) {
     .kpi-value { font-size: 1.6rem; }
-    .dash-table thead th,
-    .dash-table tbody td { padding: .65rem .75rem; }
+    .dash-table thead th, .dash-table tbody td { padding: .65rem .75rem; }
     .prod-img, .prod-img-placeholder { width: 36px; height: 36px; }
   }
 </style>
 
-<div class="dash-wrap">
-
-  {# ── KPI Cards ── #}
-  <div class="kpi-grid">
-
-    <div class="kpi-card kpi-blue">
-      <div class="kpi-icon"><i class="fa fa-tag"></i></div>
-      <div class="kpi-value" data-count="{{ product_stats.total }}">0</div>
-      <div class="kpi-label">Produtos cadastrados</div>
-    </div>
-
-    <div class="kpi-card kpi-green">
-      <div class="kpi-icon"><i class="fa fa-users"></i></div>
-      <div class="kpi-value" data-count="{{ total_users }}">0</div>
-      <div class="kpi-label">Usuários registrados</div>
-    </div>
-
-    <div class="kpi-card kpi-amber">
-      <div class="kpi-icon"><i class="fa fa-dollar-sign"></i></div>
-      <div class="kpi-value"
-           data-count="{{ product_stats.avgPrice }}"
-           data-prefix="R$&nbsp;"
-           data-decimals="2">0</div>
-      <div class="kpi-label">Preço médio</div>
-    </div>
-
-    <div class="kpi-card kpi-sky">
-      <div class="kpi-icon"><i class="fa fa-star"></i></div>
-      <div class="kpi-value"
-           data-count="{{ product_stats.avgScore ?: 0 }}"
-           data-decimals="1"
-           data-suffix="/10">0</div>
-      <div class="kpi-label">Nota média IA</div>
-    </div>
-
+{# KPI Cards #}
+<div class="kpi-grid">
+  <div class="kpi-card kpi-blue">
+    <div class="kpi-icon"><i class="fa fa-tag"></i></div>
+    <div class="kpi-value" data-count="{{ product_stats.total }}">0</div>
+    <div class="kpi-label">Produtos cadastrados</div>
   </div>
-
-  {# ── Últimos produtos ── #}
-  <div class="dash-table-card">
-    <div class="card-head">
-      <span><i class="fa fa-clock me-2" style="color:#6b7280"></i>Últimos produtos adicionados</span>
-      <span style="font-size:.75rem;color:#9ca3af;font-weight:500">{{ latest_products|length }} registros</span>
-    </div>
-    <div class="dash-table-wrap">
-      <table class="dash-table">
-        <thead>
-          <tr>
-            <th>Imagem</th>
-            <th>Nome</th>
-            <th>Categoria</th>
-            <th>Preço</th>
-            <th>Nota IA</th>
-            <th>Criado em</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for product in latest_products %}
-          <tr>
-            <td>
-              {% if product.imageUrl %}
-                <img src="{{ product.imageUrl }}" alt="{{ product.name }}" class="prod-img">
-              {% else %}
-                <div class="prod-img-placeholder"><i class="fa fa-image"></i></div>
-              {% endif %}
-            </td>
-            <td><span class="prod-name">{{ product.name }}</span></td>
-            <td>
-              {% if product.category %}
-                <span class="badge-cat">{{ product.category }}</span>
-              {% else %}
-                <span style="color:#d1d5db">—</span>
-              {% endif %}
-            </td>
-            <td style="font-weight:600">R$ {{ product.currentPrice|number_format(2, ',', '.') }}</td>
-            <td>
-              {% if product.score %}
-                <span class="score-badge {% if product.score >= 7 %}score-high{% elseif product.score >= 5 %}score-mid{% else %}score-low{% endif %}">
-                  {{ product.score|number_format(1, ',', '.') }}
-                </span>
-              {% else %}
-                <span class="score-none">—</span>
-              {% endif %}
-            </td>
-            <td style="color:#6b7280;font-size:.8rem;white-space:nowrap">
-              {{ product.createdAt|date('d/m/Y H:i') }}
-            </td>
-            <td>
-              <a href="{{ ea_url().setController('App\\Controller\\Admin\\ProductCrudController').setAction('edit').setEntityId(product.id) }}"
-                 class="btn-edit">
-                <i class="fa fa-edit"></i> Editar
-              </a>
-            </td>
-          </tr>
-          {% else %}
-          <tr>
-            <td colspan="7">
-              <div class="empty-state">
-                <i class="fa fa-box-open"></i>
-                Nenhum produto cadastrado ainda.
-              </div>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+  <div class="kpi-card kpi-green">
+    <div class="kpi-icon"><i class="fa fa-users"></i></div>
+    <div class="kpi-value" data-count="{{ total_users }}">0</div>
+    <div class="kpi-label">Usuários registrados</div>
   </div>
+  <div class="kpi-card kpi-amber">
+    <div class="kpi-icon"><i class="fa fa-dollar-sign"></i></div>
+    <div class="kpi-value" data-count="{{ product_stats.avgPrice }}" data-prefix="R$\u00a0" data-decimals="2">0</div>
+    <div class="kpi-label">Preço médio</div>
+  </div>
+  <div class="kpi-card kpi-sky">
+    <div class="kpi-icon"><i class="fa fa-star"></i></div>
+    <div class="kpi-value" data-count="{{ product_stats.avgScore ?: 0 }}" data-decimals="1" data-suffix="/10">0</div>
+    <div class="kpi-label">Nota média IA</div>
+  </div>
+</div>
 
+{# Tabela de ultimos produtos #}
+<div class="dash-table-card">
+  <div class="card-head">
+    <span><i class="fa fa-clock" style="color:#6b7280;margin-right:.4rem"></i>Últimos produtos adicionados</span>
+    <span style="font-size:.75rem;color:#9ca3af;font-weight:500">{{ latest_products|length }} registros</span>
+  </div>
+  <div class="dash-table-wrap">
+    <table class="dash-table">
+      <thead>
+        <tr>
+          <th>Imagem</th>
+          <th>Nome</th>
+          <th>Categoria</th>
+          <th>Preço</th>
+          <th>Nota IA</th>
+          <th>Criado em</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for product in latest_products %}
+        <tr>
+          <td>
+            {% if product.imageUrl %}
+              <img src="{{ product.imageUrl }}" alt="{{ product.name }}" class="prod-img" loading="lazy">
+            {% else %}
+              <div class="prod-img-placeholder"><i class="fa fa-image"></i></div>
+            {% endif %}
+          </td>
+          <td><span class="prod-name">{{ product.name }}</span></td>
+          <td>
+            {% if product.category %}
+              <span class="badge-cat">{{ product.category }}</span>
+            {% else %}
+              <span style="color:#d1d5db">—</span>
+            {% endif %}
+          </td>
+          <td style="font-weight:600">R$ {{ product.currentPrice|number_format(2, ',', '.') }}</td>
+          <td>
+            {% if product.score is not null %}
+              <span class="score-badge
+                {% if product.score >= 7 %}score-high
+                {% elseif product.score >= 5 %}score-mid
+                {% else %}score-low{% endif %}">
+                {{ product.score|number_format(1, ',', '.') }}
+              </span>
+            {% else %}
+              <span class="score-none">—</span>
+            {% endif %}
+          </td>
+          <td style="color:#6b7280;font-size:.8rem;white-space:nowrap">
+            {{ product.createdAt|date('d/m/Y H:i') }}
+          </td>
+          <td>
+            <a href="{{ ea_url().setController('App\\Controller\\Admin\\ProductCrudController').setAction('edit').setEntityId(product.id) }}"
+               class="btn-edit">
+              <i class="fa fa-edit"></i> Editar
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7">
+            <div class="empty-state">
+              <i class="fa fa-box-open"></i>
+              Nenhum produto cadastrado ainda.
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <script>
@@ -307,13 +252,9 @@
     const suffix   = el.dataset.suffix  || '';
     const duration = 900;
     const start    = performance.now();
-
     function fmt(v) {
-      return decimals
-        ? v.toFixed(decimals).replace('.', ',')
-        : Math.floor(v).toString();
+      return decimals ? v.toFixed(decimals).replace('.', ',') : Math.floor(v).toString();
     }
-
     function step(now) {
       const progress = Math.min((now - start) / duration, 1);
       const ease     = 1 - Math.pow(1 - progress, 3);
@@ -322,27 +263,15 @@
     }
     requestAnimationFrame(step);
   }
-
   const observer = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        animateCount(e.target);
-        observer.unobserve(e.target);
-      }
-    });
+    entries.forEach(e => { if (e.isIntersecting) { animateCount(e.target); observer.unobserve(e.target); } });
   }, { threshold: 0.3 });
-
   document.querySelectorAll('[data-count]').forEach(el => observer.observe(el));
-
   document.querySelectorAll('.dash-table tbody tr').forEach((row, i) => {
-    row.style.opacity = '0';
-    row.style.transform = 'translateY(10px)';
-    row.style.transition = 'opacity .3s ease, transform .3s ease';
-    setTimeout(() => {
-      row.style.opacity = '1';
-      row.style.transform = 'translateY(0)';
-    }, 80 + i * 60);
+    row.style.cssText = 'opacity:0;transform:translateY(10px);transition:opacity .3s ease,transform .3s ease';
+    setTimeout(() => { row.style.opacity='1'; row.style.transform='translateY(0)'; }, 80 + i * 60);
   });
 })();
 </script>
+
 {% endblock %}
