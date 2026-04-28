@@ -18,3 +18,7 @@ app_login:
 app_logout:
     path: /logout
     controller: App\Controller\SecurityController::logout
+
+easyadmin_dashboard:
+    path: /admin
+    controller: App\Controller\Admin\DashboardController::index
