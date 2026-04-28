@@ -8,42 +8,42 @@ use App\Entity\User;
 use App\Repository\ProductRepository;
 use App\Repository\UserRepository;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
-use EasyCorp\Bundle\EasyAdminBundle\Collection\KeyValueStore;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
+use EasyCorp\Bundle\EasyAdminBundle\Context\AdminContext;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
+use EasyCorp\Bundle\EasyAdminBundle\Factory\AdminContextFactory;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
+use Twig\Environment;
 
 #[AdminDashboard(routePath: '/admin', routeName: 'admin')]
 class DashboardController extends AbstractDashboardController
 {
     public function __construct(
-        private ProductRepository $productRepository,
-        private UserRepository $userRepository
+        private ProductRepository    $productRepository,
+        private UserRepository       $userRepository,
+        private AdminContextFactory  $adminContextFactory,
+        private Environment          $twig,
+        private RequestStack         $requestStack,
     ) {}
 
-    /**
-     * IMPORTANTE: deve chamar parent::index() para que o EA inicialize
-     * o AdminContext (necessario para ea(), ea.i18n, menu, etc.)
-     */
     public function index(): Response
     {
-        return parent::index();
-    }
+        // Inicializa o AdminContext manualmente (necessário para ea() funcionar no Twig)
+        $request = $this->requestStack->getCurrentRequest();
+        $adminContext = $this->adminContextFactory->create($request, $this, null);
 
-    /**
-     * Este metodo e chamado pelo EA apos inicializar o contexto.
-     * Aqui injetamos os dados extras que o template vai usar.
-     */
-    public function configureResponseParameters(): KeyValueStore
-    {
-        $params = parent::configureResponseParameters();
+        // Injeta o contexto como global do Twig (ea()) e no atributo da request
+        $this->twig->addGlobal('ea', $adminContext);
+        $request->attributes->set(AdminContext::class, $adminContext);
 
-        $params->set('product_stats',   $this->productRepository->getStats());
-        $params->set('total_users',     count($this->userRepository->findAll()));
-        $params->set('latest_products', $this->productRepository->findLatest(5));
-
-        return $params;
+        return $this->render('admin/dashboard.html.twig', [
+            'product_stats'   => $this->productRepository->getStats(),
+            'total_users'     => count($this->userRepository->findAll()),
+            'latest_products' => $this->productRepository->findLatest(5),
+        ]);
     }
 
     public function configureDashboard(): Dashboard

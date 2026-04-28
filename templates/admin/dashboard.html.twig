@@ -1,15 +1,4 @@
-{#
-  Estende @EasyAdmin/page/content.html.twig (NAO layout.html.twig diretamente).
-
-  Por que content.html.twig?
-  - layout.html.twig chama ea() na linha 3 para montar i18n/contexto.
-  - Se o controller chamar $this->render() diretamente, o AdminContext
-    nao e inicializado e ea() retorna null -> erro "i18n on null".
-  - content.html.twig ja estende layout, e o contexto e inicializado
-    pelo parent::index() no controller antes de renderizar.
-  - Referencia: https://symfony.com/bundles/EasyAdminBundle/current/dashboards.html
-#}
-{% extends '@EasyAdmin/page/content.html.twig' %}
+{% extends '@EasyAdmin/layout.html.twig' %}
 
 {% block content_title %}Dashboard{% endblock %}
 
@@ -31,10 +20,7 @@
     box-shadow: 0 4px 20px rgba(0,0,0,.12);
     transition: transform .2s ease, box-shadow .2s ease;
   }
-  .kpi-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 30px rgba(0,0,0,.18);
-  }
+  .kpi-card:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(0,0,0,.18); }
   .kpi-card::after {
     content: '';
     position: absolute;
@@ -44,12 +30,7 @@
     right: -30px; bottom: -30px;
   }
   .kpi-card .kpi-icon { font-size: 1.6rem; margin-bottom: .6rem; opacity: .9; }
-  .kpi-card .kpi-value {
-    font-size: 2rem;
-    font-weight: 700;
-    line-height: 1;
-    letter-spacing: -.02em;
-  }
+  .kpi-card .kpi-value { font-size: 2rem; font-weight: 700; line-height: 1; letter-spacing: -.02em; }
   .kpi-card .kpi-label { font-size: .8rem; margin-top: .3rem; opacity: .85; font-weight: 500; }
   .kpi-blue  { background: linear-gradient(135deg, #4f46e5, #7c3aed); }
   .kpi-green { background: linear-gradient(135deg, #059669, #10b981); }
@@ -63,14 +44,14 @@
     overflow: hidden;
     margin-top: 1.5rem;
   }
-  .dash-table-card .card-head {
+  .card-head {
     padding: 1rem 1.5rem;
     border-bottom: 1px solid #f3f4f6;
     display: flex;
     align-items: center;
     justify-content: space-between;
   }
-  .dash-table-card .card-head span { font-weight: 700; font-size: .95rem; color: #111827; }
+  .card-head span { font-weight: 700; font-size: .95rem; color: #111827; }
   .dash-table-wrap { overflow-x: auto; }
   .dash-table { width: 100%; border-collapse: collapse; }
   .dash-table thead th {
@@ -94,28 +75,17 @@
     vertical-align: middle;
   }
   .dash-table tbody tr:last-child td { border-bottom: none; }
-  .prod-img {
-    width: 44px; height: 44px;
-    object-fit: cover;
-    border-radius: 10px;
-    box-shadow: 0 1px 6px rgba(0,0,0,.1);
-  }
+  .prod-img { width: 44px; height: 44px; object-fit: cover; border-radius: 10px; box-shadow: 0 1px 6px rgba(0,0,0,.1); }
   .prod-img-placeholder {
-    width: 44px; height: 44px;
-    border-radius: 10px;
+    width: 44px; height: 44px; border-radius: 10px;
     background: #f3f4f6;
     display: flex; align-items: center; justify-content: center;
     color: #d1d5db; font-size: 1.1rem;
   }
   .prod-name { font-weight: 600; color: #111827; }
   .badge-cat {
-    display: inline-block;
-    padding: .25em .7em;
-    border-radius: 999px;
-    font-size: .72rem;
-    font-weight: 600;
-    background: #ede9fe;
-    color: #6d28d9;
+    display: inline-block; padding: .25em .7em; border-radius: 999px;
+    font-size: .72rem; font-weight: 600; background: #ede9fe; color: #6d28d9;
   }
   .score-badge { display: inline-block; padding: .28em .75em; border-radius: 999px; font-size: .78rem; font-weight: 700; }
   .score-high { background: #d1fae5; color: #065f46; }
@@ -124,14 +94,9 @@
   .score-none { color: #9ca3af; }
   .btn-edit {
     display: inline-flex; align-items: center; gap: .3rem;
-    padding: .35rem .75rem;
-    border-radius: 8px;
-    font-size: .78rem;
-    font-weight: 600;
-    color: #4f46e5;
-    background: #ede9fe;
-    border: none;
-    text-decoration: none;
+    padding: .35rem .75rem; border-radius: 8px;
+    font-size: .78rem; font-weight: 600;
+    color: #4f46e5; background: #ede9fe; border: none; text-decoration: none;
     transition: background .15s, color .15s;
   }
   .btn-edit:hover { background: #4f46e5; color: #fff; }
@@ -158,7 +123,7 @@
   </div>
   <div class="kpi-card kpi-amber">
     <div class="kpi-icon"><i class="fa fa-dollar-sign"></i></div>
-    <div class="kpi-value" data-count="{{ product_stats.avgPrice }}" data-prefix="R$\u00a0" data-decimals="2">0</div>
+    <div class="kpi-value" data-count="{{ product_stats.avgPrice }}" data-prefix="R$ " data-decimals="2">0</div>
     <div class="kpi-label">Preço médio</div>
   </div>
   <div class="kpi-card kpi-sky">
@@ -168,7 +133,7 @@
   </div>
 </div>
 
-{# Tabela de ultimos produtos #}
+{# Tabela ultimos produtos #}
 <div class="dash-table-card">
   <div class="card-head">
     <span><i class="fa fa-clock" style="color:#6b7280;margin-right:.4rem"></i>Últimos produtos adicionados</span>
@@ -178,13 +143,7 @@
     <table class="dash-table">
       <thead>
         <tr>
-          <th>Imagem</th>
-          <th>Nome</th>
-          <th>Categoria</th>
-          <th>Preço</th>
-          <th>Nota IA</th>
-          <th>Criado em</th>
-          <th></th>
+          <th>Imagem</th><th>Nome</th><th>Categoria</th><th>Preço</th><th>Nota IA</th><th>Criado em</th><th></th>
         </tr>
       </thead>
       <tbody>
@@ -201,9 +160,7 @@
           <td>
             {% if product.category %}
               <span class="badge-cat">{{ product.category }}</span>
-            {% else %}
-              <span style="color:#d1d5db">—</span>
-            {% endif %}
+            {% else %}<span style="color:#d1d5db">—</span>{% endif %}
           </td>
           <td style="font-weight:600">R$ {{ product.currentPrice|number_format(2, ',', '.') }}</td>
           <td>
@@ -214,29 +171,18 @@
                 {% else %}score-low{% endif %}">
                 {{ product.score|number_format(1, ',', '.') }}
               </span>
-            {% else %}
-              <span class="score-none">—</span>
-            {% endif %}
+            {% else %}<span class="score-none">—</span>{% endif %}
           </td>
-          <td style="color:#6b7280;font-size:.8rem;white-space:nowrap">
-            {{ product.createdAt|date('d/m/Y H:i') }}
-          </td>
+          <td style="color:#6b7280;font-size:.8rem;white-space:nowrap">{{ product.createdAt|date('d/m/Y H:i') }}</td>
           <td>
             <a href="{{ ea_url().setController('App\\Controller\\Admin\\ProductCrudController').setAction('edit').setEntityId(product.id) }}"
-               class="btn-edit">
-              <i class="fa fa-edit"></i> Editar
-            </a>
+               class="btn-edit"><i class="fa fa-edit"></i> Editar</a>
           </td>
         </tr>
         {% else %}
-        <tr>
-          <td colspan="7">
-            <div class="empty-state">
-              <i class="fa fa-box-open"></i>
-              Nenhum produto cadastrado ainda.
-            </div>
-          </td>
-        </tr>
+        <tr><td colspan="7">
+          <div class="empty-state"><i class="fa fa-box-open"></i>Nenhum produto cadastrado ainda.</div>
+        </td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -246,30 +192,33 @@
 <script>
 (function () {
   function animateCount(el) {
-    const target   = parseFloat(el.dataset.count) || 0;
-    const decimals = parseInt(el.dataset.decimals) || 0;
-    const prefix   = el.dataset.prefix  || '';
-    const suffix   = el.dataset.suffix  || '';
-    const duration = 900;
-    const start    = performance.now();
-    function fmt(v) {
-      return decimals ? v.toFixed(decimals).replace('.', ',') : Math.floor(v).toString();
-    }
-    function step(now) {
-      const progress = Math.min((now - start) / duration, 1);
-      const ease     = 1 - Math.pow(1 - progress, 3);
-      el.innerHTML   = prefix + fmt(ease * target) + suffix;
-      if (progress < 1) requestAnimationFrame(step);
-    }
+    const target = parseFloat(el.dataset.count) || 0;
+    const dec    = parseInt(el.dataset.decimals) || 0;
+    const pre    = el.dataset.prefix || '';
+    const suf    = el.dataset.suffix || '';
+    const dur    = 900, t0 = performance.now();
+    const fmt = v => dec ? v.toFixed(dec).replace('.', ',') : Math.floor(v).toString();
+    const step = now => {
+      const p = Math.min((now - t0) / dur, 1);
+      el.innerHTML = pre + fmt((1 - Math.pow(1 - p, 3)) * target) + suf;
+      if (p < 1) requestAnimationFrame(step);
+    };
     requestAnimationFrame(step);
   }
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(e => { if (e.isIntersecting) { animateCount(e.target); observer.unobserve(e.target); } });
+  new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { animateCount(e.target); } });
+  }, { threshold: 0.3 }).observe.bind(
+    new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { animateCount(e.target); } });
+    }, { threshold: 0.3 })
+  );
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { animateCount(e.target); } });
   }, { threshold: 0.3 });
-  document.querySelectorAll('[data-count]').forEach(el => observer.observe(el));
+  document.querySelectorAll('[data-count]').forEach(el => obs.observe(el));
   document.querySelectorAll('.dash-table tbody tr').forEach((row, i) => {
     row.style.cssText = 'opacity:0;transform:translateY(10px);transition:opacity .3s ease,transform .3s ease';
-    setTimeout(() => { row.style.opacity='1'; row.style.transform='translateY(0)'; }, 80 + i * 60);
+    setTimeout(() => { row.style.opacity = '1'; row.style.transform = 'translateY(0)'; }, 80 + i * 60);
   });
 })();
 </script>
