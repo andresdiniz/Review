@@ -5,10 +5,10 @@ namespace App\Controller\Admin;
 
 use App\Entity\User;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
-use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
-use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
-use EasyCorp\Bundle\EasyAdminBundle\Field\EmailField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\ArrayField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\EmailField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 
 class UserCrudController extends AbstractCrudController
@@ -31,8 +31,10 @@ class UserCrudController extends AbstractCrudController
     {
         yield IdField::new('id')->onlyOnIndex();
         yield EmailField::new('email', 'E-mail');
-        yield TextField::new('roles', 'Funções')
-            ->formatValue(fn($v) => implode(', ', $v ?? []))
-            ->onlyOnIndex();
+        // roles é um array (JSON no banco), precisa de ArrayField
+        yield ArrayField::new('roles', 'Funções');
+        yield DateTimeField::new('createdAt', 'Criado em')
+            ->onlyOnIndex()
+            ->hideWhenCreating();
     }
 }

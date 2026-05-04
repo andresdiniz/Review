@@ -13,6 +13,7 @@
 {% block tw_image %}<meta name="twitter:image" content="{{ product.imageUrl ?? '' }}">{% endblock %}
 
 {% block structured_data %}
+{% set priceValidUntil = 'now'|date_modify('+30 days')|date('Y-m-d') %}
 <script type="application/ld+json">
 [
   {
@@ -36,7 +37,7 @@
       "priceCurrency": "BRL",
       "availability": "https://schema.org/InStock",
       "url": "{{ product.affiliateLink }}",
-      "priceValidUntil": "{{ \"now\"|date_modify(\"+30 days\")|date(\"Y-m-d\") }}"
+      "priceValidUntil": "{{ priceValidUntil }}"
     },
     "review": {
       "@type": "Review",
@@ -398,15 +399,14 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-// Gráfico de histórico de preço
 fetch('/api/produto/{{ product.slug }}/historico-precos')
     .then(r => r.json())
     .then(data => {
         const meta = document.getElementById('price-history-meta');
         if (!data.history || data.history.length < 2) {
             document.getElementById('price-history-box').innerHTML =
-                '<div class="buy-price-label" style="margin-bottom:.5rem"><i class="fas fa-chart-line me-1"></i> Histórico de Preço</div>' +
-                '<p style="font-size:.8rem;color:#9ca3af;font-family:\'DM Sans\',sans-serif;margin:0">Histórico será exibido após executar <code>app:record-prices</code>.</p>';
+                '<div class="buy-price-label" style="margin-bottom:.5rem"><i class="fas fa-chart-line me-1"></i> Hist\u00f3rico de Pre\u00e7o</div>' +
+                '<p style="font-size:.8rem;color:#9ca3af;font-family:\'DM Sans\',sans-serif;margin:0">Hist\u00f3rico ser\u00e1 exibido ap\u00f3s executar <code>app:record-prices</code>.</p>';
             return;
         }
         const ctx = document.getElementById('priceChart');
@@ -415,7 +415,7 @@ fetch('/api/produto/{{ product.slug }}/historico-precos')
             data: {
                 labels: data.history.map(h => h.date),
                 datasets: [{
-                    label: 'Preço (R$)',
+                    label: 'Pre\u00e7o (R$)',
                     data: data.history.map(h => h.price),
                     borderColor: '#4f46e5',
                     backgroundColor: 'rgba(79,70,229,0.08)',
@@ -429,19 +429,16 @@ fetch('/api/produto/{{ product.slug }}/historico-precos')
                 responsive: true,
                 plugins: { legend: { display: false } },
                 scales: {
-                    y: {
-                        ticks: { callback: v => 'R$' + v.toLocaleString('pt-BR', {minimumFractionDigits:2}) }
-                    },
+                    y: { ticks: { callback: v => 'R$' + v.toLocaleString('pt-BR', {minimumFractionDigits:2}) } },
                     x: { ticks: { maxTicksLimit: 6 } }
                 }
             }
         });
         if (data.lowest) {
-            meta.innerHTML = `💰 Mínimo histórico: <strong>R$ ${parseFloat(data.lowest).toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong>`;
+            meta.innerHTML = '\uD83D\uDCB0 M\u00ednimo hist\u00F3rico: <strong>R$ ' + parseFloat(data.lowest).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</strong>';
         }
     });
 
-// Botão copiar link
 const copyBtn = document.getElementById('copyBtn');
 if (copyBtn) {
     copyBtn.addEventListener('click', () => {
