@@ -34,16 +34,17 @@ class DashboardController extends AbstractDashboardController
     {
         return Dashboard::new()
             ->setTitle('<img src="/img/logo.png" alt="Logo" style="height:30px"> Reviews')
-            ->setFaviconPath('favicon.ico')
-            ->setLocales(['pt_BR']);
+            ->setFaviconPath('favicon.ico');
     }
 
     public function configureMenuItems(): iterable
     {
         yield MenuItem::linkToDashboard('Dashboard', 'fa fa-home');
-        yield MenuItem::linkToCrud('Produtos', 'fa fa-tag', Product::class)
-            ->setController(ProductCrudController::class);
-        yield MenuItem::linkToCrud('Usuários', 'fa fa-user', User::class)
-            ->setController(UserCrudController::class);
+        yield MenuItem::linkToRoute('Produtos', 'fa fa-tag', 'admin', [
+            'crudControllerFqcn' => ProductCrudController::class,
+        ]);
+        yield MenuItem::linkToRoute('Usuários', 'fa fa-user', 'admin', [
+            'crudControllerFqcn' => UserCrudController::class,
+        ]);
     }
 }
