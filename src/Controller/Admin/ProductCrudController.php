@@ -4,7 +4,6 @@
 namespace App\Controller\Admin;
 
 use App\Entity\Product;
-use EasyCorp\Bundle\EasyAdminBundle\Config\Asset;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Assets;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Filters;
@@ -36,11 +35,19 @@ class ProductCrudController extends AbstractCrudController
             ->setPaginatorPageSize(20);
     }
 
+    /**
+     * Carrega EasyMDE (CDN) + nosso init/CSS local apenas nas páginas de
+     * novo/editar produto (onde o campo fullReviewMarkdown aparece).
+     */
     public function configureAssets(Assets $assets): Assets
     {
         return $assets
+            // EasyMDE — editor Markdown rico
             ->addCssFile('https://unpkg.com/easymde/dist/easymde.min.css')
-            ->addJsFile('https://unpkg.com/easymde/dist/easymde.min.js');
+            ->addJsFile('https://unpkg.com/easymde/dist/easymde.min.js')
+            // Estilos e inicialização locais
+            ->addCssFile('/admin/easymde-init.css')
+            ->addJsFile('/admin/easymde-init.js');
     }
 
     public function configureFilters(Filters $filters): Filters
@@ -74,7 +81,7 @@ class ProductCrudController extends AbstractCrudController
         yield TextareaField::new('fullReviewMarkdown', 'Review Completo (Markdown)')
             ->hideOnIndex()
             ->setNumOfRows(20)
-            ->setHelp('Use Markdown para formatar o review. O editor suporta preview ao vivo, toolbar e tela cheia.')
+            ->setHelp('Use Markdown para formatar o review. O editor suporta ✅ toolbar, 🔍 preview ao vivo, ↔ lado a lado e ▢ tela cheia.')
             ->setFormTypeOption('attr', [
                 'data-easymde' => 'true',
                 'class'        => 'easymde-field',
