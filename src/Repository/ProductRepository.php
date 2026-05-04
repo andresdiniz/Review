@@ -84,7 +84,6 @@ class ProductRepository extends ServiceEntityRepository
 
     /**
      * Produtos sem conteúdo de IA (veredito e/ou review vazios).
-     * Usado pelo seletor de lote de IA.
      */
     public function findWithoutAiContent(): array
     {
@@ -136,12 +135,38 @@ class ProductRepository extends ServiceEntityRepository
             ->where('p.category IS NOT NULL')
             ->getQuery()->getSingleScalarResult();
 
+        // Contagem de produtos sem análise IA
+        $withoutAi = (int) $this->createQueryBuilder('p')
+            ->select('COUNT(p.id)')
+            ->where('p.aiVerdict IS NULL OR p.aiVerdict = :empty')
+            ->setParameter('empty', '')
+            ->getQuery()->getSingleScalarResult();
+
+        // Preço médio por categoria (para o gráfico do dashboard)
+        $rawCategoryStats = $this->createQueryBuilder('p')
+            ->select('p.category AS name, AVG(p.currentPrice) AS avgPrice, COUNT(p.id) AS total')
+            ->where('p.category IS NOT NULL')
+            ->andWhere('p.category != :empty')
+            ->setParameter('empty', '')
+            ->groupBy('p.category')
+            ->orderBy('p.category', 'ASC')
+            ->getQuery()
+            ->getArrayResult();
+
+        $categoryStats = array_map(fn($row) => [
+            'name'     => $row['name'],
+            'avgPrice' => round((float) $row['avgPrice'], 2),
+            'total'    => (int) $row['total'],
+        ], $rawCategoryStats);
+
         return [
             'total'           => $total,
             'avgPrice'        => $avgPrice,
             'avgScore'        => $avgScore,
             'updatedToday'    => $updatedToday,
             'categoriesCount' => $categoriesCount,
+            'withoutAi'       => $withoutAi,
+            'categoryStats'   => $categoryStats,
         ];
     }
 
