@@ -26,10 +26,12 @@ class ProductController extends AbstractController
         ]);
         $form->handleRequest($request);
 
-        $filters = [];
-        if ($form->isSubmitted() && $form->isValid()) {
-            $filters = array_filter($form->getData() ?? [], fn($v) => $v !== null && $v !== '');
-        }
+        // Lê filtros do form (quando submetido) OU direto da query string
+        $formData = ($form->isSubmitted() && $form->isValid())
+            ? ($form->getData() ?? [])
+            : $request->query->all('product_filter_type');
+
+        $filters = array_filter($formData, fn($v) => $v !== null && $v !== '');
 
         [$orderBy, $order] = $this->parseOrderBy($filters['order_by'] ?? null);
         unset($filters['order_by']);
