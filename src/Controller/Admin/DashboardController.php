@@ -54,8 +54,8 @@ class DashboardController extends AbstractDashboardController
             ->setTitle('<img src="/img/logo.png" alt="Logo" style="height:30px"> Reviews')
             ->setFaviconPath('favicon.ico')
             ->setLocales(['pt_BR'])
-            // Sobrescreve o template da pagina index do dashboard
-            ->overrideTemplate('layout', '@EasyAdmin/layout.html.twig');
+            // Sobrescreve o template da pagina index do dashboard com o template customizado
+            ->overrideTemplate('crud/index', 'admin/dashboard.html.twig');
     }
 
     public function configureMenuItems(): iterable
