@@ -11,14 +11,16 @@ use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
+use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGeneratorInterface;
 use Symfony\Component\HttpFoundation\Response;
 
 #[AdminDashboard(routePath: '/admin', routeName: 'admin')]
 class DashboardController extends AbstractDashboardController
 {
     public function __construct(
-        private ProductRepository $productRepository,
-        private UserRepository    $userRepository,
+        private ProductRepository          $productRepository,
+        private UserRepository             $userRepository,
+        private AdminUrlGeneratorInterface $adminUrlGenerator,
     ) {}
 
     public function index(): Response
@@ -39,8 +41,16 @@ class DashboardController extends AbstractDashboardController
 
     public function configureMenuItems(): iterable
     {
+        $productsUrl = $this->adminUrlGenerator
+            ->setController(ProductCrudController::class)
+            ->generateUrl();
+
+        $usersUrl = $this->adminUrlGenerator
+            ->setController(UserCrudController::class)
+            ->generateUrl();
+
         yield MenuItem::linkToDashboard('Dashboard', 'fa fa-home');
-        yield MenuItem::linkToCrud('Produtos', 'fa fa-tag', Product::class);
-        yield MenuItem::linkToCrud('Usuários', 'fa fa-user', User::class);
+        yield MenuItem::linkToUrl('Produtos', 'fa fa-tag', $productsUrl);
+        yield MenuItem::linkToUrl('Usuários', 'fa fa-user', $usersUrl);
     }
 }
