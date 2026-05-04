@@ -44,7 +44,6 @@ class ProductController extends AbstractController
             'page'        => $paginated['page'],
             'perPage'     => $paginated['perPage'],
             'filter_form' => $form->createView(),
-            // CORRIGIDO: categories passadas ao template para os chips de navegação
             'categories'  => $categories,
         ]);
     }
@@ -65,31 +64,29 @@ class ProductController extends AbstractController
     #[Route('/categoria/{category}', name: 'product_category')]
     public function category(string $category, Request $request, ProductRepository $productRepository): Response
     {
-        $filters   = ['category' => $category];
-        $page      = max(1, (int) $request->query->get('page', 1));
-        $paginated = $productRepository->findPaginated($filters, $page, self::PER_PAGE);
+        $categories = $productRepository->findDistinctCategories();
+        $filters    = ['category' => $category];
+        $page       = max(1, (int) $request->query->get('page', 1));
+        $paginated  = $productRepository->findPaginated($filters, $page, self::PER_PAGE);
 
         return $this->render('product/category.html.twig', [
-            'category' => $category,
-            'products' => $paginated['items'],
-            'total'    => $paginated['total'],
-            'pages'    => $paginated['pages'],
-            'page'     => $paginated['page'],
-            'perPage'  => $paginated['perPage'],
+            'category'   => $category,
+            'categories' => $categories,
+            'products'   => $paginated['items'],
+            'total'      => $paginated['total'],
+            'pages'      => $paginated['pages'],
+            'page'       => $paginated['page'],
+            'perPage'    => $paginated['perPage'],
         ]);
     }
 
-    /**
-     * Converte a string de ordenação do formulário em (campo, direção).
-     * CORRIGIDO: adicionado suporte ao campo score.
-     */
     private function parseOrderBy(?string $orderBy): array
     {
         return match ($orderBy) {
             'currentPrice_asc'  => ['currentPrice', 'ASC'],
             'currentPrice_desc' => ['currentPrice', 'DESC'],
             'name_asc'          => ['name', 'ASC'],
-            'score_desc'        => ['score', 'DESC'],  // NOVO: melhor avaliados
+            'score_desc'        => ['score', 'DESC'],
             default             => ['createdAt', 'DESC'],
         };
     }
