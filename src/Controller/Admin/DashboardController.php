@@ -8,7 +8,6 @@ use App\Entity\User;
 use App\Repository\ProductRepository;
 use App\Repository\UserRepository;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
-use EasyCorp\Bundle\EasyAdminBundle\Collection\KeyValueStore;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
@@ -22,30 +21,13 @@ class DashboardController extends AbstractDashboardController
         private UserRepository    $userRepository,
     ) {}
 
-    /**
-     * parent::index() inicializa o AdminContext do EA (rotas, i18n, menu).
-     * Os dados extras sao injetados via configureResponseParameters().
-     */
     public function index(): Response
     {
-        return parent::index();
-    }
-
-    /**
-     * EA5 chama este metodo APOS inicializar o contexto e ANTES de renderizar.
-     * Aqui podemos injetar variaveis extras que ficam disponiveis no Twig.
-     *
-     * O template a ser usado e definido em configureDashboard()->overrideTemplates().
-     */
-    public function configureResponseParameters(): KeyValueStore
-    {
-        $params = parent::configureResponseParameters();
-
-        $params->set('product_stats',   $this->productRepository->getStats());
-        $params->set('total_users',     count($this->userRepository->findAll()));
-        $params->set('latest_products', $this->productRepository->findLatest(5));
-
-        return $params;
+        return $this->render('admin/dashboard.html.twig', [
+            'product_stats'   => $this->productRepository->getStats(),
+            'total_users'     => count($this->userRepository->findAll()),
+            'latest_products' => $this->productRepository->findLatest(5),
+        ]);
     }
 
     public function configureDashboard(): Dashboard
@@ -53,9 +35,7 @@ class DashboardController extends AbstractDashboardController
         return Dashboard::new()
             ->setTitle('<img src="/img/logo.png" alt="Logo" style="height:30px"> Reviews')
             ->setFaviconPath('favicon.ico')
-            ->setLocales(['pt_BR'])
-            // Sobrescreve o template da pagina index do dashboard com o template customizado
-            ->overrideTemplate('crud/index', 'admin/dashboard.html.twig');
+            ->setLocales(['pt_BR']);
     }
 
     public function configureMenuItems(): iterable
