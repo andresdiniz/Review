@@ -4,6 +4,10 @@
 namespace App\Controller\Admin;
 
 use App\Entity\Product;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Asset;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Assets;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Filters;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
@@ -12,10 +16,8 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\NumberField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextareaField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\UrlField;
-use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
-use EasyCorp\Bundle\EasyAdminBundle\Config\Filters;
-use EasyCorp\Bundle\EasyAdminBundle\Filter\TextFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\NumericFilter;
+use EasyCorp\Bundle\EasyAdminBundle\Filter\TextFilter;
 
 class ProductCrudController extends AbstractCrudController
 {
@@ -32,6 +34,13 @@ class ProductCrudController extends AbstractCrudController
             ->setSearchFields(['name', 'category', 'aiVerdict'])
             ->setDefaultSort(['createdAt' => 'DESC'])
             ->setPaginatorPageSize(20);
+    }
+
+    public function configureAssets(Assets $assets): Assets
+    {
+        return $assets
+            ->addCssFile('https://unpkg.com/easymde/dist/easymde.min.css')
+            ->addJsFile('https://unpkg.com/easymde/dist/easymde.min.js');
     }
 
     public function configureFilters(Filters $filters): Filters
@@ -56,12 +65,21 @@ class ProductCrudController extends AbstractCrudController
         yield TextField::new('imageUrl', 'URL Imagem');
         yield TextField::new('mercadolivreId', 'ID Mercado Livre');
         yield TextField::new('youtubeVideoId', 'ID YouTube');
+
         yield TextareaField::new('aiVerdict', 'Veredito IA')
             ->hideOnIndex()
             ->setNumOfRows(4);
+
+        // Campo com editor Markdown rico (EasyMDE)
         yield TextareaField::new('fullReviewMarkdown', 'Review Completo (Markdown)')
             ->hideOnIndex()
-            ->setNumOfRows(12);
+            ->setNumOfRows(20)
+            ->setHelp('Use Markdown para formatar o review. O editor suporta preview ao vivo, toolbar e tela cheia.')
+            ->setFormTypeOption('attr', [
+                'data-easymde' => 'true',
+                'class'        => 'easymde-field',
+            ]);
+
         yield DateTimeField::new('createdAt', 'Criado em')->onlyOnIndex();
         yield DateTimeField::new('lastUpdateAt', 'Atualizado em')->onlyOnIndex();
     }
