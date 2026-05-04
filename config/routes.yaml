@@ -1,16 +1,8 @@
 # yaml-language-server: $schema=../vendor/symfony/routing/Loader/schema/routing.schema.json
 
-# This file is the entry point to configure the routes of your app.
-# Methods with the #[Route] attribute are automatically imported.
-# See also https://symfony.com/doc/current/routing.html
-
-# To list all registered routes, run the following command:
-#   bin/console debug:router
-
 controllers:
     resource: routing.controllers
 
-# config/routes.yaml
 app_login:
     path: /login
     controller: App\Controller\SecurityController::login
@@ -18,7 +10,3 @@ app_login:
 app_logout:
     path: /logout
     controller: App\Controller\SecurityController::logout
-
-easyadmin_dashboard:
-    path: /admin
-    controller: App\Controller\Admin\DashboardController::index
