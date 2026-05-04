@@ -10,33 +10,25 @@ use App\Repository\UserRepository;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
-use EasyCorp\Bundle\EasyAdminBundle\Context\AdminContext;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
-use EasyCorp\Bundle\EasyAdminBundle\Factory\AdminContextFactory;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Twig\Environment;
 
+/**
+ * O AdminRouterSubscriber do EasyAdmin (prioridade 1 no KernelRequest) ja cria
+ * o AdminContext e o injeta como global Twig (`ea`) ANTES de este controller
+ * ser chamado. Por isso $this->render() funciona normalmente com os templates
+ * que extendem @EasyAdmin/page/content.html.twig.
+ */
 #[AdminDashboard(routePath: '/admin', routeName: 'admin')]
 class DashboardController extends AbstractDashboardController
 {
     public function __construct(
-        private ProductRepository   $productRepository,
-        private UserRepository      $userRepository,
-        private AdminContextFactory $adminContextFactory,
-        private Environment         $twig,
+        private ProductRepository $productRepository,
+        private UserRepository    $userRepository,
     ) {}
 
     public function index(): Response
     {
-        /** @var Request $request */
-        $request = $this->container->get('request_stack')->getCurrentRequest();
-
-        // Cria o AdminContext (i18n, menu, assets) e injeta na variavel global `ea`
-        $adminContext = $this->adminContextFactory->create($request, $this, null);
-        $this->twig->addGlobal('ea', $adminContext);
-        $request->attributes->set('easyadmin_context', $adminContext);
-
         return $this->render('admin/dashboard.html.twig', [
             'product_stats'   => $this->productRepository->getStats(),
             'total_users'     => count($this->userRepository->findAll()),
