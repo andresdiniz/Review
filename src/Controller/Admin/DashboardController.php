@@ -8,6 +8,7 @@ use App\Entity\User;
 use App\Repository\ProductRepository;
 use App\Repository\UserRepository;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
+use EasyCorp\Bundle\EasyAdminBundle\Collection\KeyValueStore;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
@@ -23,11 +24,28 @@ class DashboardController extends AbstractDashboardController
 
     public function index(): Response
     {
-        return $this->render('admin/dashboard.html.twig', [
-            'product_stats'   => $this->productRepository->getStats(),
-            'total_users'     => count($this->userRepository->findAll()),
-            'latest_products' => $this->productRepository->findLatest(5),
-        ]);
+        // Deixa o EA inicializar o AdminContext (i18n, menu, assets...)
+        // e depois sobrescreve apenas o template renderizado
+        return parent::index();
+    }
+
+    /**
+     * EA5 chama este metodo APOS montar o contexto e ANTES de renderizar.
+     * Aqui injetamos as variaveis extras e definimos o template customizado.
+     */
+    public function configureResponseParameters(): KeyValueStore
+    {
+        $params = parent::configureResponseParameters();
+
+        // Injetamos os dados do dashboard
+        $params->set('product_stats',   $this->productRepository->getStats());
+        $params->set('total_users',     count($this->userRepository->findAll()));
+        $params->set('latest_products', $this->productRepository->findLatest(5));
+
+        // Sobrescreve o template que o EA vai renderizar para esta pagina
+        $params->set('templateName', 'admin/dashboard.html.twig');
+
+        return $params;
     }
 
     public function configureDashboard(): Dashboard
